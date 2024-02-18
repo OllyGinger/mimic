@@ -2,20 +2,20 @@ use crate::{errors::BuildError, op, op::Op, parser, EncodingPattern};
 use evalexpr::*;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::path::Path;
 use std::{io::Write, path::PathBuf};
 
 pub struct Generator {
     encodings: HashMap<String, EncodingPattern>,
-    ops: HashMap<u32, Op>,
+    ops: BTreeMap<u32, Op>,
 }
 
 pub fn new() -> Generator {
     Generator {
         encodings: HashMap::<String, EncodingPattern>::new(),
-        ops: HashMap::<u32, Op>::new(),
+        ops: BTreeMap::<u32, Op>::new(),
     }
 }
 
@@ -31,10 +31,9 @@ impl Generator {
         // Build all of the opcodes based on the specified rules
         self.process_opcodes();
 
-        let stream = self.generate_token_stream();
         let out_path = PathBuf::from(output_path.into());
         let mut out_file = File::create(&out_path).unwrap();
-        out_file.write_all(stream.to_string().as_bytes()).unwrap();
+        let stream = self.generate_file(&mut out_file);
 
         #[cfg(feature = "rustfmt")]
         rustfmt(&out_path)
@@ -42,21 +41,17 @@ impl Generator {
 
     fn process_opcodes(&mut self) {
         for opcode in 0..255 {
-            let x = opcode >> 6;
-            let y = (opcode >> 3) & 7;
-            let z = opcode & 7;
-            let p = y >> 1;
-            let q = y & 1;
+            let encoding_params: op::EncodingParams = opcode.into();
 
             // Loop through all of our opcode encodings to try and find one that matches
             let mut any_found = false;
             for op_encoding in &self.encodings {
                 let eval_context = context_map! {
-                    "x" => x,
-                    "y" => y,
-                    "z" => z,
-                    "p" => p,
-                    "q" => q
+                    "x" => Value::Int(encoding_params.x as i64),
+                    "y" => Value::Int(encoding_params.y as i64),
+                    "z" => Value::Int(encoding_params.z as i64),
+                    "p" => Value::Int(encoding_params.p as i64),
+                    "q" => Value::Int(encoding_params.q as i64)
                 }
                 .unwrap();
 
@@ -87,19 +82,19 @@ impl Generator {
                     opcode.try_into().unwrap(),
                     op::from_encoding_pattern(opcode.try_into().unwrap(), op_encoding.1),
                 );
+
+                if any_found {
+                    break;
+                }
             }
         }
     }
 
-    fn generate_token_stream(&self) -> TokenStream {
-        let opcode_arms = self
-            .ops
-            .iter()
-            .map(|(_, op)| self.generate_op_match_arm_token_stream(op));
-
-        quote!(
-            #[derive(Default)]
-            struct Registers{
+    fn generate_file(&self, file: &mut File) {
+        writeln!(
+            file,
+            "#[derive(Default)]
+            struct Registers{{
                 pc: u16, // Program Counter
                 sp: u16, // Stack Pointer
                 a: u8,
@@ -113,26 +108,43 @@ impl Generator {
 
                 // Interrupts
                 ime: u8, // Interrupt master enable
-            }
-            struct CPU {
+            }}
+            struct CPU {{
                 pub registers: Registers
-            }
-            pub fn opcode(op: u32, cpu: &mut CPU) {
-                match(op) {
-                    #(#opcode_arms),*
-                }
-            }
+            }}"
         )
+        .unwrap();
+
+        writeln!(
+            file,
+            "
+            pub fn opcode(op: u32, cpu: &mut CPU) {{
+                match(op) {{"
+        )
+        .unwrap();
+
+        for op in &self.ops {
+            self.generate_op_match_arm_token_stream(file, &op.1);
+        }
+
+        writeln!(file, "}}").unwrap();
     }
 
-    fn generate_op_match_arm_token_stream(&self, op: &Op) -> TokenStream {
-        let action = "doot";
+    fn generate_op_match_arm_token_stream(&self, file: &mut File, op: &Op) {
+        let action = &op.code;
         let opcode = op.opcode;
-        quote!(
-            (#opcode) => {
-                #action
-            }
+
+        writeln!(
+            file,
+            "
+        ({}) => {{
+            {}
+        }}
+        ",
+            opcode,
+            action.to_string()
         )
+        .unwrap();
     }
 }
 
