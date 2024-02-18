@@ -1,0 +1,1 @@
+struct Registers { pc : u16 , # [doc = r" Program Counter"] sp : u16 , # [doc = r" Stack Pointer"] a : u8 , f : Flags , b : u8 , c : u8 , d : u8 , e : u8 , h : u8 , l : u8 , # [doc = r" Interrupts"] ime : u8 , # [doc = r" Interrupt master enable"] } struct CPU { } pub fn opcode (op : u32) { match (op) { (0u32) => { "HLT" } , (0u32) => { "$REG_Y = $REG_Z" } } }

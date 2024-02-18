@@ -1,0 +1,31 @@
+# The Sharp LR35902 (AKA SM83) is the CPU that's found inside the original Gameboy. This is almost the same as a Z80, but 
+# there are some gameboy specifc differences.
+#
+# This file describes the rules in these pages;
+#   https://gbdev.io/gb-opcodes/optables/octal
+#   http://www.z80.info/decoding.htm
+#
+#
+# This CPU had blocks of 256 opcodes. For each opcode index, we split out some components in this form:
+#
+# MSB    (opcode idx bits)     LSB
+# [7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 ]
+# \      /\         /\          /
+#    x         y           z
+#         |      |   |
+#         |   p  | q |
+#
+# X = Opcode 1st octal digit (bits 7-6)
+# Y = Opcode 2nd octal digit (bits 5-3)
+# Z = Opcode 3rd octal digit (bits 2-0)
+# P = Y right shift one position (bits 5-4)
+# Q = Y modulo 2 (bit 3)
+
+
+LD $REG_Y,$REG_Z:
+  encoding: (x == 1 && y != 1 && z != 6)
+  action: $REG_Y = $REG_Z
+
+HALT:
+  encoding: (x == 1 && y == 6 && z == 6)
+  action: HLT

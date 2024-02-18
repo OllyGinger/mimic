@@ -1,0 +1,15 @@
+[package]
+name = "opgen-test"
+version.workspace = true
+edition = "2021"
+
+[profile.release]
+debug = 1
+
+[dependencies]
+opgen = { path = "../opgen" }
+
+[profile.dev.build-override]
+opt-level = 0
+codegen-units = 256
+debug = true
