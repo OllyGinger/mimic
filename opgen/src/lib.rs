@@ -4,14 +4,14 @@ use std::collections::HashMap;
 
 mod errors;
 pub mod generator;
+mod op;
 mod parser;
 
 #[derive(Deserialize, PartialEq, Debug, Default)]
 #[serde(default)]
-pub struct Op {
+pub struct EncodingPattern {
     pub encoding: String,
     pub action: String,
-    pub opcode: u32,
 
     #[serde(skip)]
     pub compiled_encoding: Option<Node>,
@@ -19,5 +19,5 @@ pub struct Op {
 
 #[derive(PartialEq, Debug)]
 pub struct Encoding {
-    pub ops: HashMap<String, Op>,
+    pub ops: HashMap<String, EncodingPattern>,
 }

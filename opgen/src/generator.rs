@@ -1,4 +1,4 @@
-use crate::{errors::BuildError, parser, Op};
+use crate::{errors::BuildError, op, op::Op, parser, EncodingPattern};
 use evalexpr::*;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -7,21 +7,21 @@ use std::fs::File;
 use std::path::Path;
 use std::{io::Write, path::PathBuf};
 
-pub struct Generator<'a> {
-    encodings: HashMap<String, Op>,
-    ops: HashMap<u32, &'a Op>,
+pub struct Generator {
+    encodings: HashMap<String, EncodingPattern>,
+    ops: HashMap<u32, Op>,
 }
 
-pub fn new<'a>() -> Generator<'a> {
+pub fn new() -> Generator {
     Generator {
-        encodings: HashMap::<String, Op>::new(),
-        ops: HashMap::<u32, &'a Op>::new(),
+        encodings: HashMap::<String, EncodingPattern>::new(),
+        ops: HashMap::<u32, Op>::new(),
     }
 }
 
-impl<'a> Generator<'a> {
+impl Generator {
     pub fn generate(
-        &'a mut self,
+        &mut self,
         encoding_path: impl Into<String>,
         output_path: impl Into<String>,
     ) -> Result<(), BuildError> {
@@ -40,7 +40,7 @@ impl<'a> Generator<'a> {
         rustfmt(&out_path)
     }
 
-    fn process_opcodes(&'a mut self) {
+    fn process_opcodes(&mut self) {
         for opcode in 0..255 {
             let x = opcode >> 6;
             let y = (opcode >> 3) & 7;
@@ -83,14 +83,16 @@ impl<'a> Generator<'a> {
                     None => {}
                 }
 
-                self.ops.insert(opcode.try_into().unwrap(), op_encoding.1);
+                self.ops.insert(
+                    opcode.try_into().unwrap(),
+                    op::from_encoding_pattern(opcode.try_into().unwrap(), op_encoding.1),
+                );
             }
         }
     }
 
-    fn generate_token_stream(&'a self) -> TokenStream {
-        /*let opcode_arms = parser
-            .encoding
+    fn generate_token_stream(&self) -> TokenStream {
+        let opcode_arms = self
             .ops
             .iter()
             .map(|(_, op)| self.generate_op_match_arm_token_stream(op));
@@ -120,14 +122,12 @@ impl<'a> Generator<'a> {
                     #(#opcode_arms),*
                 }
             }
-        )*/
-        quote!()
+        )
     }
 
-    fn generate_op_match_arm_token_stream(&'a self, op: &Op) -> TokenStream {
+    fn generate_op_match_arm_token_stream(&self, op: &Op) -> TokenStream {
+        let action = "doot";
         let opcode = op.opcode;
-        let action = &op.action;
-
         quote!(
             (#opcode) => {
                 #action

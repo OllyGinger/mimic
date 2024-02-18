@@ -5,14 +5,18 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 
-use crate::Op;
+use crate::EncodingPattern;
 
 pub struct Parser {}
 
-pub fn from_path(path: PathBuf, encodings: &mut HashMap<String, Op>) -> std::io::Result<()> {
+pub fn from_path(
+    path: PathBuf,
+    encodings: &mut HashMap<String, EncodingPattern>,
+) -> std::io::Result<()> {
     let encoding_file = File::open(path)?;
     let reader = BufReader::new(encoding_file);
-    let mut op_encoding: HashMap<String, Op> = serde_yaml::from_reader(reader).unwrap();
+    let mut op_encoding: HashMap<String, EncodingPattern> =
+        serde_yaml::from_reader(reader).unwrap();
 
     // Pre compile all of the evals
     for op in &mut op_encoding {
