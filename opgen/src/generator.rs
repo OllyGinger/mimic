@@ -33,7 +33,7 @@ impl Generator {
 
         let out_path = PathBuf::from(output_path.into());
         let mut out_file = File::create(&out_path).unwrap();
-        let stream = self.generate_file(&mut out_file);
+        let _stream = self.generate_file(&mut out_file);
 
         #[cfg(feature = "rustfmt")]
         rustfmt(&out_path)
@@ -93,33 +93,16 @@ impl Generator {
     fn generate_file(&self, file: &mut File) {
         writeln!(
             file,
-            "#[derive(Default)]
-            struct Registers{{
-                pc: u16, // Program Counter
-                sp: u16, // Stack Pointer
-                a: u8,
-                f: Flags,
-                b: u8,
-                c: u8,
-                d: u8,
-                e: u8,
-                h: u8,
-                l: u8,
-
-                // Interrupts
-                ime: u8, // Interrupt master enable
-            }}
-            struct CPU {{
-                pub registers: Registers
-            }}"
+            "use super::cpu::CPU;
+            impl CPU {{"
         )
         .unwrap();
 
         writeln!(
             file,
             "
-            pub fn opcode(op: u32, cpu: &mut CPU) {{
-                match(op) {{"
+            pub fn opcode(&mut self,op: u32, cpu: &mut CPU) {{
+                match op {{"
         )
         .unwrap();
 
@@ -127,6 +110,9 @@ impl Generator {
             self.generate_op_match_arm_token_stream(file, &op.1);
         }
 
+        writeln!(file, "_ => unreachable!()").unwrap();
+        writeln!(file, "}}").unwrap();
+        writeln!(file, "}}").unwrap();
         writeln!(file, "}}").unwrap();
     }
 
@@ -137,10 +123,14 @@ impl Generator {
         writeln!(
             file,
             "
-        ({}) => {{
+        // {} - L:{} D:{}
+        {:#06x} => {{
             {}
         }}
         ",
+            op.mnemonic,
+            op.length,
+            op.duration,
             opcode,
             action.to_string()
         )

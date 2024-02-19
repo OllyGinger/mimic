@@ -15,8 +15,21 @@
                     "--manifest-path=${workspaceFolder}/opgen-test/Cargo.toml"
                 ]
             },
-            "args": [
-            ],
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug mimic",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=mimic",
+                    "--manifest-path=${workspaceFolder}/mimic/Cargo.toml"
+                ]
+            },
+            "args": [],
             "cwd": "${workspaceFolder}"
         }
     ]

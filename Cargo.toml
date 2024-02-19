@@ -1,5 +1,5 @@
 [workspace]
-members = ["opgen", "opgen-test"]
+members = [ "mimic","opgen", "opgen-test"]
 resolver = "2"
 
 [workspace.package]

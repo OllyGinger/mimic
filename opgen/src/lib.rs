@@ -12,9 +12,19 @@ mod parser;
 pub struct EncodingPattern {
     pub encoding: String,
     pub action: String,
+    #[serde(default = "default_serde_length")]
+    pub length: u8,
+    pub duration: u8,
+    pub conditional_duration: Option<u8>,
 
     #[serde(skip)]
     pub compiled_encoding: Option<Node>,
+    #[serde(skip)]
+    pub mnemonic: String,
+}
+
+fn default_serde_length() -> u8 {
+    1
 }
 
 #[derive(PartialEq, Debug)]

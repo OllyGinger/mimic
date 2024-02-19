@@ -7,14 +7,22 @@ pub struct Op {
     pub opcode: u32,
     pub mnemonic: String,
     pub code: TokenStream,
+    pub length: u8,
+    pub duration: u8,
+    pub conditional_duration: Option<u8>,
 }
 
 pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) -> Op {
     let new_code = handle_action_replacements(opcode, &encoding_pattern.action);
+    let new_mnemonic = handle_mnemonic_replacements(opcode, &encoding_pattern.mnemonic);
+
     Op {
         opcode: opcode,
-        mnemonic: encoding_pattern.encoding.to_string(),
+        mnemonic: new_mnemonic,
         code: new_code.parse().unwrap(),
+        length: encoding_pattern.length,
+        duration: encoding_pattern.duration,
+        conditional_duration: encoding_pattern.conditional_duration,
     }
 }
 
@@ -26,18 +34,21 @@ fn handle_action_replacements(opcode: u32, action: &String) -> String {
         .replace("$RZ", &get_register_variable(encoding_params.z))
 }
 
-fn get_register_variable(idx: u8) -> String {
-    const REGISTER: &'static [&'static str] = &[
-        "cpu.registers.b",
-        "cpu.registers.c",
-        "cpu.registers.d",
-        "cpu.registers.e",
-        "(H)",
-        "(L)",
-        "",
-        "cpu.registers.a",
-    ];
+fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
+    let encoding_params: EncodingParams = opcode.into();
 
+    mnemonic
+        .replace("$RY", &get_register_description(encoding_params.y))
+        .replace("$RZ", &get_register_description(encoding_params.y))
+}
+
+fn get_register_variable(idx: u8) -> String {
+    const REGISTER: &'static [&'static str] = &["b", "c", "d", "e", "h", "l", "", "a"];
+    return REGISTER[idx as usize].to_string();
+}
+
+fn get_register_description(idx: u8) -> String {
+    const REGISTER: &'static [&'static str] = &["B", "C", "D", "E", "H", "L", "(HL)", "A"];
     return REGISTER[idx as usize].to_string();
 }
 
@@ -56,7 +67,7 @@ impl Into<EncodingParams> for u32 {
         EncodingParams {
             x: (code >> 6) as u8,
             y: y,
-            z: y & 7,
+            z: code & 7,
             p: y >> 1,
             q: y & 1,
         }

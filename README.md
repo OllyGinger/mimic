@@ -9,3 +9,4 @@ This is another experimental emulator that will attempt to emulate a few differe
 ### Z80
 * Opcode decoding: http://www.z80.info/decoding.htm#upfx
 * Opcode decoding: https://github.com/floooh/chips/blob/master/codegen/z80_gen.py
+* Opcode table: https://gbdev.io/gb-opcodes//optables/octal

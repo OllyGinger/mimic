@@ -26,6 +26,7 @@ pub fn from_path(
         }
 
         op.1.compiled_encoding = Some(eval.unwrap());
+        op.1.mnemonic = op.0.clone();
     }
 
     *encodings = op_encoding;

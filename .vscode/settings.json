@@ -1,7 +1,8 @@
 {
     "rust-analyzer.linkedProjects": [
         ".\\opgen\\Cargo.toml",
-        ".\\opgen-test\\Cargo.toml"
+        ".\\opgen-test\\Cargo.toml",
+        ".\\mimic\\Cargo.toml"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false
 }

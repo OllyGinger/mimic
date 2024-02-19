@@ -1,0 +1,13 @@
+[package]
+name = "mimic"
+version.workspace = true
+edition = "2021"
+
+[profile.release]
+debug = 1
+
+[build-dependencies]
+opgen = { path = "../opgen" }
+
+[dependencies]
+bitflags = "1"

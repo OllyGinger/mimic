@@ -21,15 +21,30 @@
 # P = Y right shift one position (bits 5-4)
 # Q = Y modulo 2 (bit 3)
 
-# Quadrant 0
-NOP:
-  encoding: (x == 0 && y == 0 && z == 0)
-  action:
-
-LD $REG_Y,$REG_Z:
-  encoding: (x == 1 && y != 1 && z != 6)
-  action: $REG_Y = $REG_Z;
-
-HALT:
+# Define more specific rules first.
+# Quadrant 1 (Deal with this first to make filling out other quadrants easier)
+HALT: 
   encoding: (x == 1 && y == 6 && z == 6)
-  action: HLT
+  action: cpu.halt()
+
+LD $RY, $RZ:
+  encoding: (x == 1 && y != 6 && z != 6)
+  length: 2
+  duration: 8
+  action: 
+    self.registers.inc_pc(1);
+    self.registers.set_$RY(self.registers.$RZ()); 
+
+
+# Quadrant 0
+#NOP:
+#  encoding: (x == 0 && y == 0 && z == 0)
+#  action:
+#
+#LD $REG_Y,$REG_Z:
+#  encoding: (x == 1 && y != 1 && z != 6)
+#  action: $REG_Y = $REG_Z;
+#
+#HALT:
+#  encoding: (x == 1 && y == 6 && z == 6)
+#  action: HLT
