@@ -126,14 +126,13 @@ impl Generator {
         writeln!(
             file,
             "
-        // {} - L:{} D:{}
+        // {} - {}t
         {:#06x} => {{
             {}
             mcycles = {};
         }}
         ",
             op.mnemonic,
-            op.length,
             op.mcycle_duration,
             opcode,
             action.to_string(),

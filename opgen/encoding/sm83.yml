@@ -21,20 +21,44 @@
 # P = Y right shift one position (bits 5-4)
 # Q = Y modulo 2 (bit 3)
 
-# Define more specific rules first.
-# Quadrant 1 (Deal with this first to make filling out other quadrants easier)
+# Quadrant 1
 HALT: 
   encoding: (x == 1 && y == 6 && z == 6)
   action: self.halt();
 
 LD $RY, $RZ:
   encoding: (x == 1 && y != 6 && z != 6)
-  length: 2
   mcycle_duration: 1
   action: 
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.registers.$RZ()); 
 
+LD (HL), $RZ:
+  encoding: (x == 1 && y == 6 && z != 6)
+  mcycle_duration: 1
+  action: 
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.registers.$RZ()); 
+
+LD $RY, (HL):
+  encoding: (x == 1 && y != 6 && z == 6)
+  mcycle_duration: 1
+  action: 
+    self.registers.inc_pc(1);
+    self.registers.set_$RY(self.mmu.read8(self.registers.hl()));
+
+# Quadrant 1
+$ALU (HL):
+  encoding: (x == 2) && (z != 6)
+  mcycle_duration: 1
+  action:
+    self.$ALU(self.registers.$RZ());
+
+$ALU $RZ:
+  encoding: (x == 2) && (z != 6)
+  mcycle_duration: 1
+  action:
+    self.$ALU(self.registers.$RZ());
 
 # Quadrant 0
 #NOP:
