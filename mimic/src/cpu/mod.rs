@@ -1,3 +1,3 @@
-mod cpu;
-mod instructions;
-mod registers;
+pub mod cpu;
+pub mod instructions;
+pub mod registers;

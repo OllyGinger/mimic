@@ -1,7 +1,5 @@
 use crate::{errors::BuildError, op, op::Op, parser, EncodingPattern};
 use evalexpr::*;
-use proc_macro2::TokenStream;
-use quote::quote;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::path::Path;
@@ -101,8 +99,12 @@ impl Generator {
         writeln!(
             file,
             "
-            pub fn opcode(&mut self,op: u32, cpu: &mut CPU) {{
-                match op {{"
+            /// Each opcode is calculated as a machine-cycle (time it takes to complete a sub-operation, eg a fetch)
+            /// Returns: Duration of the tick in T-States, which is machine cycles * 4. 
+            pub fn tick(&mut self) -> u32 {{
+                let next_opcode = self.read_next_opcode();
+                let mcycles;
+                match next_opcode.opcode {{"
         )
         .unwrap();
 
@@ -112,6 +114,7 @@ impl Generator {
 
         writeln!(file, "_ => unreachable!()").unwrap();
         writeln!(file, "}}").unwrap();
+        writeln!(file, "mcycles").unwrap();
         writeln!(file, "}}").unwrap();
         writeln!(file, "}}").unwrap();
     }
@@ -126,13 +129,15 @@ impl Generator {
         // {} - L:{} D:{}
         {:#06x} => {{
             {}
+            mcycles = {};
         }}
         ",
             op.mnemonic,
             op.length,
-            op.duration,
+            op.mcycle_duration,
             opcode,
-            action.to_string()
+            action.to_string(),
+            op.mcycle_duration,
         )
         .unwrap();
     }

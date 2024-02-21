@@ -8,8 +8,8 @@ pub struct Op {
     pub mnemonic: String,
     pub code: TokenStream,
     pub length: u8,
-    pub duration: u8,
-    pub conditional_duration: Option<u8>,
+    pub mcycle_duration: u8,
+    pub mcycle_conditional_duration: Option<u8>,
 }
 
 pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) -> Op {
@@ -21,8 +21,8 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
         mnemonic: new_mnemonic,
         code: new_code.parse().unwrap(),
         length: encoding_pattern.length,
-        duration: encoding_pattern.duration,
-        conditional_duration: encoding_pattern.conditional_duration,
+        mcycle_duration: encoding_pattern.mcycle_duration,
+        mcycle_conditional_duration: encoding_pattern.mcycle_conditional_duration,
     }
 }
 
@@ -39,7 +39,7 @@ fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
 
     mnemonic
         .replace("$RY", &get_register_description(encoding_params.y))
-        .replace("$RZ", &get_register_description(encoding_params.y))
+        .replace("$RZ", &get_register_description(encoding_params.z))
 }
 
 fn get_register_variable(idx: u8) -> String {

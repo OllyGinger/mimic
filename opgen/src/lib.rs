@@ -14,8 +14,8 @@ pub struct EncodingPattern {
     pub action: String,
     #[serde(default = "default_serde_length")]
     pub length: u8,
-    pub duration: u8,
-    pub conditional_duration: Option<u8>,
+    pub mcycle_duration: u8,
+    pub mcycle_conditional_duration: Option<u8>,
 
     #[serde(skip)]
     pub compiled_encoding: Option<Node>,
