@@ -1,4 +1,4 @@
-use crate::memory::memory::Memory;
+use crate::memory::{memory::Memory, mmu::MMU};
 
 use super::registers::Registers;
 use std::fmt;
@@ -6,7 +6,7 @@ use std::fmt;
 pub struct CPU {
     pub registers: Registers,
     pub halt: bool,
-    pub mmu: Box<dyn Memory>,
+    pub mmu: MMU,
 }
 
 pub struct NextOpcode {
@@ -15,7 +15,7 @@ pub struct NextOpcode {
 }
 
 impl CPU {
-    pub fn new(mmu: Box<dyn Memory>) -> CPU {
+    pub fn new(mmu: MMU) -> CPU {
         CPU {
             registers: Registers::new(),
             halt: false,

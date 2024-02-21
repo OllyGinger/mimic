@@ -7,8 +7,6 @@ use std::path::PathBuf;
 
 use crate::EncodingPattern;
 
-pub struct Parser {}
-
 pub fn from_path(
     path: PathBuf,
     encodings: &mut HashMap<String, EncodingPattern>,

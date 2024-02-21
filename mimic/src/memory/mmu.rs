@@ -1,7 +1,10 @@
 use super::memory::Memory;
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 pub struct MMU {
-    interfaces: Vec<Box<dyn Memory>>,
+    /// Map of memory interfaces, each with its own address range. Multiple address ranges
+    /// may map to the same memory interface
+    interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn Memory>>>,
 
     interrupt_flag: u8,
 }
@@ -9,20 +12,73 @@ pub struct MMU {
 impl MMU {
     pub fn new() -> MMU {
         MMU {
-            interfaces: Vec::<Box<dyn Memory>>::new(),
+            interfaces: BTreeMap::<(usize, usize), Rc<RefCell<dyn Memory>>>::new(),
             interrupt_flag: 0u8,
         }
     }
 
-    pub fn add_interface(&mut self, interface: Box<dyn Memory>) {
-        self.interfaces.push(interface);
+    /// Add a memory interface to the MMU at the specified memory Range
+    ///
+    /// # Arguments
+    ///
+    /// * `address_ranges` - The memory ranges to add the interface to. These must NOT overlap
+    ///     with any previously added ranges.
+    /// * `interface` - The memory interface for this range
+    pub fn add_interface<I>(&mut self, address_ranges: I, interface: Rc<RefCell<dyn Memory>>)
+    where
+        I: IntoIterator<Item = std::ops::Range<usize>>,
+    {
+        for range in address_ranges {
+            let ord_range = (range.start, range.end);
+            if self.interfaces.contains_key(&ord_range) {
+                panic!("Address ranges must not overlap. Range: {:?}", ord_range);
+            }
+
+            self.interfaces.insert(ord_range, interface.clone());
+        }
     }
 
     pub fn tick(&mut self) {
-        for interface in &mut self.interfaces {
-            interface.tick();
-            self.interrupt_flag |= interface.get_interrupt();
-            interface.reset_interrupt();
+        for (_, interface) in &mut self.interfaces {
+            let mut memory = interface.borrow_mut();
+            memory.tick();
+            self.interrupt_flag |= memory.get_interrupt();
+            memory.reset_interrupt();
         }
+    }
+
+    pub fn read8(&self, address: u16) -> u8 {
+        let binding = self.get_mapped_interface(address);
+        let interface = binding.borrow();
+        return interface.read8(address);
+    }
+
+    pub fn write8(&mut self, address: u16, value: u8) {
+        let binding = self.get_mapped_interface(address);
+        let mut interface = binding.borrow_mut();
+        interface.write8(address, value);
+    }
+
+    pub fn read16(&self, address: u16) -> u16 {
+        let binding = self.get_mapped_interface(address);
+        let interface = binding.borrow();
+        (interface.read8(address) as u16) | ((interface.read8(address + 1) as u16) << 8)
+    }
+
+    pub fn write16(&mut self, address: u16, value: u16) {
+        let binding = self.get_mapped_interface(address);
+        let mut interface = binding.borrow_mut();
+        interface.write8(address, (value & 0xFF) as u8);
+        interface.write8(address + 1, ((value >> 8) & 0xFF) as u8);
+    }
+
+    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
+        for (range, interface) in &self.interfaces {
+            if range.0 <= address as usize && address as usize <= range.1 {
+                return interface.clone();
+            }
+        }
+
+        panic!("Address is not mapped to MMU: {:#06x}", address);
     }
 }
