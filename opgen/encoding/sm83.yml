@@ -35,40 +35,47 @@ LD $RY, $RZ:
 
 LD (HL), $RZ:
   encoding: (x == 1 && y == 6 && z != 6)
-  mcycle_duration: 1
+  mcycle_duration: 2
   action: 
     self.registers.inc_pc(1);
     self.mmu.write8(self.registers.hl(), self.registers.$RZ()); 
 
 LD $RY, (HL):
   encoding: (x == 1 && y != 6 && z == 6)
-  mcycle_duration: 1
+  mcycle_duration: 2
   action: 
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.mmu.read8(self.registers.hl()));
 
-# Quadrant 1
+# Quadrant 2
 $ALU (HL):
-  encoding: (x == 2) && (z != 6)
-  mcycle_duration: 1
+  encoding: (x == 2) && (z == 6)
+  mcycle_duration: 2
   action:
-    self.$ALU(self.registers.$RZ());
+    self.registers.inc_pc(1);
+    self.alu_$ALU(self.mmu.read8(self.registers.hl()));
 
 $ALU $RZ:
   encoding: (x == 2) && (z != 6)
   mcycle_duration: 1
   action:
-    self.$ALU(self.registers.$RZ());
+    self.registers.inc_pc(1);
+    self.alu_$ALU(self.registers.$RZ());
 
 # Quadrant 0
-#NOP:
-#  encoding: (x == 0 && y == 0 && z == 0)
-#  action:
-#
-#LD $REG_Y,$REG_Z:
-#  encoding: (x == 1 && y != 1 && z != 6)
-#  action: $REG_Y = $REG_Z;
-#
-#HALT:
-#  encoding: (x == 1 && y == 6 && z == 6)
-#  action: HLT
+NOP:
+  encoding: (x == 0 && y == 0 && z == 0)
+  action:
+    self.registers.inc_pc(1);
+
+INC $RY:
+  encoding: (x == 0 && y != 6 && z == 4)
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_$RY(self.registers.$RY().wrapping_add(1)); 
+
+DEC $RY:
+  encoding: (x == 0 && y != 6 && z == 5)
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_$RY(self.registers.$RY().wrapping_sub(1)); 
