@@ -117,6 +117,8 @@ impl Generator {
         writeln!(file, "mcycles").unwrap();
         writeln!(file, "}}").unwrap();
         writeln!(file, "}}").unwrap();
+
+        self.generate_tests(file);
     }
 
     fn generate_op_match_arm_token_stream(&self, file: &mut File, op: &Op) {
@@ -126,19 +128,81 @@ impl Generator {
         writeln!(
             file,
             "
-        // {} - {}t
+        // {}
+        // ({:o} octal) - {}t
         {:#06x} => {{
             {}
             mcycles = {};
         }}
         ",
             op.mnemonic,
+            opcode,
             op.mcycle_duration,
             opcode,
             action.to_string(),
             op.mcycle_duration,
         )
         .unwrap();
+    }
+
+    fn generate_tests(&self, file: &mut File) {
+        writeln!(
+            file,
+            "#[cfg(test)]
+            mod tests {{
+                use crate::cpu::cpu::CPU;
+                use crate::memory::{{mmu::MMU, memory::Memory, test_memory}};
+                use std::rc::Rc;
+                use std::cell::RefCell;"
+        )
+        .unwrap();
+
+        for op in &self.ops {
+            self.generate_op_test(file, &op.1);
+        }
+
+        writeln!(file, "}}").unwrap();
+    }
+
+    fn generate_op_test(&self, file: &mut File, op: &Op) {
+        let op_name = op
+            .mnemonic
+            .replace(" ", "_")
+            .replace(",", "")
+            .replace("(", "ind_")
+            .replace(")", "_ind")
+            .to_lowercase();
+        writeln!(file, "#[test]").unwrap();
+        writeln!(file, "fn test_op_{op_name}() {{").unwrap();
+        if let Some(tests) = &op.tests {
+            for test in tests {
+                writeln!(file, "let mut memory = test_memory::TestMemory::new();").unwrap();
+                writeln!(
+                    file,
+                    "memory.write8(0x00, {:#04x}); // Write the opcode into test memory",
+                    op.opcode
+                )
+                .unwrap();
+
+                writeln!(file, "let mut mmu: MMU = MMU::new();").unwrap();
+                writeln!(
+                    file,
+                    "mmu.add_interface([0x00..0xFF], Rc::new(RefCell::new(memory)));"
+                )
+                .unwrap();
+                writeln!(file, "let mut cpu = CPU::new(mmu);").unwrap();
+                for (reg, val) in &test.set {
+                    writeln!(file, "cpu.registers.set_{}({:#04x});", reg, val).unwrap();
+                }
+
+                writeln!(file, "cpu.tick();").unwrap();
+
+                for (reg, val) in &test.expect {
+                    writeln!(file, "assert_eq!(cpu.registers.{}(), {:#04x});", reg, val).unwrap();
+                }
+            }
+        }
+        writeln!(file, "}}").unwrap();
     }
 }
 

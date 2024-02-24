@@ -4,6 +4,7 @@ use cpu::cpu::CPU;
 use memory::{memory::Memory, test_memory};
 
 mod cpu;
+mod int_utils;
 mod memory;
 
 fn main() {

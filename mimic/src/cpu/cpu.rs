@@ -1,6 +1,7 @@
 use crate::memory::{memory::Memory, mmu::MMU};
 
 use super::registers::Registers;
+use crate::int_utils::IntExt;
 use std::fmt;
 
 pub struct CPU {
@@ -111,5 +112,17 @@ impl CPU {
 
     pub fn alu_cp(&mut self, val: u8) {
         self.alu_subcp(val, false, false);
+    }
+
+    pub fn alu_add_hl(&mut self, val: u16) {
+        let a = val;
+        let b = self.registers.hl();
+        let (result, carry) = b.overflowing_add(a);
+        let half_carry = u16::test_add_carry_bit(11, a, b);
+        self.registers.set_flag_z(result == 0);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(half_carry);
+        self.registers.set_flag_c(carry);
+        self.registers.set_hl(result);
     }
 }

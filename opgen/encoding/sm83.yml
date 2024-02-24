@@ -21,17 +21,22 @@
 # P = Y right shift one position (bits 5-4)
 # Q = Y modulo 2 (bit 3)
 
-# Quadrant 1
+# --- Quadrant 1 ---
 HALT: 
   encoding: (x == 1 && y == 6 && z == 6)
   action: self.halt();
 
 LD $RY, $RZ:
   encoding: (x == 1 && y != 6 && z != 6)
-  mcycle_duration: 1
   action: 
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.registers.$RZ()); 
+  tests:
+    - set:
+        - [$RZ, 0x66]
+      expect:
+        - [$RY, 0x66]
+        - [pc, 0x01]
 
 LD (HL), $RZ:
   encoding: (x == 1 && y == 6 && z != 6)
@@ -47,7 +52,7 @@ LD $RY, (HL):
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.mmu.read8(self.registers.hl()));
 
-# Quadrant 2
+# --- Quadrant 2 ---
 $ALU (HL):
   encoding: (x == 2) && (z == 6)
   mcycle_duration: 2
@@ -57,25 +62,114 @@ $ALU (HL):
 
 $ALU $RZ:
   encoding: (x == 2) && (z != 6)
-  mcycle_duration: 1
   action:
     self.registers.inc_pc(1);
     self.alu_$ALU(self.registers.$RZ());
 
-# Quadrant 0
+# --- Quadrant 0 ---
 NOP:
   encoding: (x == 0 && y == 0 && z == 0)
   action:
     self.registers.inc_pc(1);
 
+# 8 bit inc/dec
 INC $RY:
   encoding: (x == 0 && y != 6 && z == 4)
   action:
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.registers.$RY().wrapping_add(1)); 
 
+INC (HL):
+  encoding: (x == 0 && y == 6 && z == 4)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()).wrapping_add(1)); 
+
 DEC $RY:
   encoding: (x == 0 && y != 6 && z == 5)
   action:
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.registers.$RY().wrapping_sub(1)); 
+
+DEC (HL):
+  encoding: (x == 0 && y == 6 && z == 5)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()).wrapping_sub(1)); 
+
+# 16 bit inc/dec
+INC $RRP:
+  encoding: (x == 0 && z == 3 && q == 0)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_$RRP(self.registers.$RRP().wrapping_add(1));
+
+DEC $RRP:
+  encoding: (x == 0 && z == 3 && q == 1)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_$RRP(self.registers.$RRP().wrapping_sub(1));
+
+# 16 bit immediate load
+ADD HL, $RRP:
+  encoding: (x == 0 && z == 1 && q == 1)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.alu_add_hl(self.registers.$RRP());
+LD $RRP, n16:
+  encoding: (x == 0 && z == 1 && q == 0)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    self.registers.inc_pc(2);
+    self.registers.set_hl(imm);
+
+# 8 bit Load literal
+LD $RY, n8:
+  encoding: (x == 0 && y != 6 && z == 6)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc());
+    self.registers.inc_pc(1);
+    self.registers.set_$RY(imm);
+LD (HL), n8:
+  encoding: (x == 0 && y == 6 && z == 6)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc());
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), imm);
+
+# 16 bit indirect loads
+LD (BC), A:
+  encoding: (x == 0 && z == 2 && q == 0 && p == 0)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.bc(), self.registers.a());
+LD A, (BC):
+  encoding: (x == 0 && z == 2 && q == 1 && p == 0)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_a(self.mmu.read8(self.registers.bc()));
+LD (DE), A:
+  encoding: (x == 0 && z == 2 && q == 0 && p == 1)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.de(), self.registers.a());
+LD A, (DE):
+  encoding: (x == 0 && z == 2 && q == 1 && p == 1)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_a(self.mmu.read8(self.registers.de()));

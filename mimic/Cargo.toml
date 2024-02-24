@@ -11,3 +11,4 @@ opgen = { path = "../opgen" }
 
 [dependencies]
 bitflags = "1"
+num-traits = "0.2"
