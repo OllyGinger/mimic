@@ -1,8 +1,5 @@
-use std::collections::HashMap;
-
-use proc_macro2::TokenStream;
-
 use crate::{EncodingPattern, EncodingTest};
+use proc_macro2::TokenStream;
 
 #[derive(Default)]
 pub struct Op {
@@ -29,7 +26,7 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
             //}
 
             for k in test.set.iter_mut() {
-                k.0 = handle_action_replacements(opcode, &k.0);
+                *k = handle_action_replacements(opcode, &k);
             }
             for k in test.expect.iter_mut() {
                 k.0 = handle_action_replacements(opcode, &k.0);

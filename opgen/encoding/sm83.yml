@@ -33,10 +33,24 @@ LD $RY, $RZ:
     self.registers.set_$RY(self.registers.$RZ()); 
   tests:
     - set:
-        - [$RZ, 0x66]
+        - registers.set_$RZ(0x66)
       expect:
-        - [$RY, 0x66]
-        - [pc, 0x01]
+        - [registers.$RY(), 0x66]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set: # Check flags aren't messed with
+        - registers.set_$RZ(0x66)
+        - registers.enable_all_flags()
+      expect:
+        - [registers.$RY(), 0x66]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
 
 LD (HL), $RZ:
   encoding: (x == 1 && y == 6 && z != 6)
@@ -44,6 +58,28 @@ LD (HL), $RZ:
   action: 
     self.registers.inc_pc(1);
     self.mmu.write8(self.registers.hl(), self.registers.$RZ()); 
+  tests:
+    - set:
+        - registers.set_$RZ(0xff)
+        - registers.set_hl(0xffff)
+      expect:
+        - [mmu.read8(0xffff), 0xff]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set: # Check flags aren't messed with
+        - registers.set_$RZ(0xff)
+        - registers.set_hl(0xffff)
+        - registers.enable_all_flags()
+      expect:
+        - [mmu.read8(0xffff), 0xff]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
 
 LD $RY, (HL):
   encoding: (x == 1 && y != 6 && z == 6)
@@ -51,6 +87,28 @@ LD $RY, (HL):
   action: 
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.mmu.read8(self.registers.hl()));
+  tests:
+    - set:
+        - mmu.write8(0xffff, 0xAB)
+        - registers.set_hl(0xffff)
+      expect:
+        - [registers.$RY(), 0xAB]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set: # Check flags aren't messed with
+        - mmu.write8(0xffff, 0xAB)
+        - registers.set_hl(0xffff)
+        - registers.enable_all_flags()
+      expect:
+        - [registers.$RY(), 0xAB]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
 
 # --- Quadrant 2 ---
 $ALU (HL):
@@ -71,34 +129,100 @@ NOP:
   encoding: (x == 0 && y == 0 && z == 0)
   action:
     self.registers.inc_pc(1);
+  tests:
+    - expect:
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags()
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01] 
 
 # 8 bit inc/dec
 INC $RY:
   encoding: (x == 0 && y != 6 && z == 4)
   action:
     self.registers.inc_pc(1);
-    self.registers.set_$RY(self.registers.$RY().wrapping_add(1)); 
+    let (val, flags) = self.inc8(self.registers.$RY());
+    self.registers.set_$RY(val); 
+    self.registers.set_flags(flags);
+  tests:
+    - set:
+        - registers.set_$RY(0xFE)
+      expect:
+        - [registers.$RY(), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RY(0xFF)
+      expect:
+        - [registers.$RY(), 0x00]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
 
 INC (HL):
   encoding: (x == 0 && y == 6 && z == 4)
   mcycle_duration: 3
   action:
     self.registers.inc_pc(1);
-    self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()).wrapping_add(1)); 
+    let (val, flags) = self.inc8(self.mmu.read8(self.registers.hl()));
+    self.registers.set_flags(flags);
+    self.mmu.write8(self.registers.hl(), val); 
+  tests:
+    - set:
+        - mmu.write8(0xff00, 0xDE)
+        - registers.set_hl(0xff00)
+      expect:
+        - [registers.hl(), 0xff00]
+        - [mmu.read8(0xff00), 0xDF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
 
 DEC $RY:
   encoding: (x == 0 && y != 6 && z == 5)
   action:
     self.registers.inc_pc(1);
     self.registers.set_$RY(self.registers.$RY().wrapping_sub(1)); 
-
+  tests:
+    - set:
+        - registers.set_$RY(0xFF)
+      expect:
+        - [registers.$RY(), 0xFE]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
 DEC (HL):
   encoding: (x == 0 && y == 6 && z == 5)
   mcycle_duration: 3
   action:
     self.registers.inc_pc(1);
     self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()).wrapping_sub(1)); 
-
+  tests:
+    - set:
+        - mmu.write8(0xff00, 0xDF)
+        - registers.set_hl(0xff00)
+      expect:
+        - [registers.hl(), 0xff00]
+        - [mmu.read8(0xff00), 0xDE]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
 # 16 bit inc/dec
 INC $RRP:
   encoding: (x == 0 && z == 3 && q == 0)
@@ -106,6 +230,16 @@ INC $RRP:
   action:
     self.registers.inc_pc(1);
     self.registers.set_$RRP(self.registers.$RRP().wrapping_add(1));
+  tests:
+    - set:
+        - registers.set_$RRP(0xABCD)
+      expect:
+        - [registers.$RRP(), 0xABCE]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
 
 DEC $RRP:
   encoding: (x == 0 && z == 3 && q == 1)
@@ -113,6 +247,16 @@ DEC $RRP:
   action:
     self.registers.inc_pc(1);
     self.registers.set_$RRP(self.registers.$RRP().wrapping_sub(1));
+  tests:
+    - set:
+        - registers.set_$RRP(0xABCD)
+      expect:
+        - [registers.$RRP(), 0xABCC]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
 
 # 16 bit immediate load
 ADD HL, $RRP:

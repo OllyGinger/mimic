@@ -1,5 +1,5 @@
 use evalexpr::Node;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::collections::HashMap;
 
 mod errors;
@@ -36,8 +36,8 @@ fn default_serde_duration() -> u8 {
 #[derive(Deserialize, PartialEq, Debug, Default, Clone)]
 #[serde(default)]
 pub struct EncodingTest {
-    pub set: Vec<(String, u8)>,
-    pub expect: Vec<(String, u8)>,
+    pub set: Vec<String>,
+    pub expect: Vec<(String, u16)>,
 }
 
 #[derive(PartialEq, Debug)]

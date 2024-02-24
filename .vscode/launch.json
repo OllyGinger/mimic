@@ -31,6 +31,21 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
-        }
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit-tests",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=mimic",
+                    "--manifest-path=${workspaceFolder}/mimic/Cargo.toml"
+                ]
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }

@@ -1,8 +1,7 @@
-use crate::memory::{memory::Memory, mmu::MMU};
+use crate::memory::mmu::MMU;
 
-use super::registers::Registers;
+use super::registers::{Flags, Registers};
 use crate::int_utils::IntExt;
-use std::fmt;
 
 pub struct CPU {
     pub registers: Registers,
@@ -27,9 +26,6 @@ impl CPU {
     pub fn halt(&mut self) {
         self.halt = true;
     }
-    pub fn is_halted(&self) -> bool {
-        self.halt
-    }
 
     // Currently only supports 0xCB prefix (fine for SM83 CPU)
     pub fn read_next_opcode(&mut self) -> NextOpcode {
@@ -43,6 +39,15 @@ impl CPU {
         }
 
         NextOpcode { opcode, prefix }
+    }
+
+    pub fn inc8(&self, val: u8) -> (u8, Flags) {
+        let mut flags = Flags::empty();
+        let result = val.wrapping_add(1);
+        flags.set(Flags::ZERO, result == 0);
+        flags.set(Flags::N_SUBTRACT, false);
+        flags.set(Flags::CARRY, (val & 0x0f) + 1 > 0x0f);
+        (result, flags)
     }
 
     pub fn alu_add(&mut self, val: u8) {

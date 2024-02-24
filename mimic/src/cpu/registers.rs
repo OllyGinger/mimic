@@ -209,6 +209,14 @@ impl Registers {
     pub fn set_flag_c(self: &mut Registers, flag: bool) {
         self.f.set(Flags::CARRY, flag);
     }
+    pub fn set_flags(&mut self, f: Flags) {
+        self.f = f;
+    }
+
+    #[cfg(test)]
+    pub fn enable_all_flags(&mut self) {
+        self.f = Flags::all();
+    }
 
     // Interrupts
     pub fn set_ime(self: &mut Registers, enabled: bool) {

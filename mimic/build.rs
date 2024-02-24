@@ -1,5 +1,4 @@
 use opgen::generator;
-use std::env;
 use std::path::PathBuf;
 
 fn main() {
@@ -11,6 +10,5 @@ fn main() {
 
     let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
     let lr35902_path = out_dir.join("sm83.rs");
-    let generator =
-        generator::new().generate(LR35902_DEFINITION_PATH, lr35902_path.to_str().unwrap());
+    let _ = generator::new().generate(LR35902_DEFINITION_PATH, lr35902_path.to_str().unwrap());
 }
