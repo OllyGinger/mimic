@@ -46,7 +46,16 @@ impl CPU {
         let result = val.wrapping_add(1);
         flags.set(Flags::ZERO, result == 0);
         flags.set(Flags::N_SUBTRACT, false);
-        flags.set(Flags::CARRY, (val & 0x0f) + 1 > 0x0f);
+        flags.set(Flags::HALF_CARRY, (val & 0x0f) + 1 > 0x0f);
+        (result, flags)
+    }
+
+    pub fn dec8(&self, val: u8) -> (u8, Flags) {
+        let mut flags = Flags::empty();
+        let result = val.wrapping_sub(1);
+        flags.set(Flags::ZERO, result == 0);
+        flags.set(Flags::N_SUBTRACT, true);
+        flags.set(Flags::HALF_CARRY, (val & 0x0f) == 0);
         (result, flags)
     }
 

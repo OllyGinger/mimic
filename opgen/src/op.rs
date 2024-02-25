@@ -18,13 +18,6 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
     let mut tests = encoding_pattern.tests.clone(); // Cloning Option<Vec<EncodingTest>> to modify it
     if let Some(actual_tests) = &mut tests {
         for test in actual_tests {
-            //for (r, _) in &mut test.set {
-            //    *r = handle_action_replacements(opcode, r);
-            //}
-            //for (r, _) in &mut test.expect {
-            //    *r = handle_action_replacements(opcode, r);
-            //}
-
             for k in test.set.iter_mut() {
                 *k = handle_action_replacements(opcode, &k);
             }

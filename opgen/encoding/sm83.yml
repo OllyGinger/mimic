@@ -22,10 +22,12 @@
 # Q = Y modulo 2 (bit 3)
 
 # --- Quadrant 1 ---
+# Flags: - - - -
 HALT: 
   encoding: (x == 1 && y == 6 && z == 6)
   action: self.halt();
 
+# Flags: - - - -
 LD $RY, $RZ:
   encoding: (x == 1 && y != 6 && z != 6)
   action: 
@@ -52,6 +54,7 @@ LD $RY, $RZ:
         - [registers.flag_c(), 1]
         - [registers.pc(), 0x01]
 
+# Flags: - - - -
 LD (HL), $RZ:
   encoding: (x == 1 && y == 6 && z != 6)
   mcycle_duration: 2
@@ -81,6 +84,7 @@ LD (HL), $RZ:
         - [registers.flag_c(), 1]
         - [registers.pc(), 0x01]
 
+# Flags: - - - -
 LD $RY, (HL):
   encoding: (x == 1 && y != 6 && z == 6)
   mcycle_duration: 2
@@ -111,6 +115,11 @@ LD $RY, (HL):
         - [registers.pc(), 0x01]
 
 # --- Quadrant 2 ---
+# ADD Flags: Z 0 H C
+# SUB Flags: Z 1 H C
+# AND Flags: Z 0 1 0
+# XOR Flags: Z 0 0 0
+# CP Flags: Z 1 H C
 $ALU (HL):
   encoding: (x == 2) && (z == 6)
   mcycle_duration: 2
@@ -125,6 +134,7 @@ $ALU $RZ:
     self.alu_$ALU(self.registers.$RZ());
 
 # --- Quadrant 0 ---
+# Flags: - - - -
 NOP:
   encoding: (x == 0 && y == 0 && z == 0)
   action:
@@ -142,6 +152,7 @@ NOP:
         - [registers.pc(), 0x01] 
 
 # 8 bit inc/dec
+# Flags: Z 0 H -
 INC $RY:
   encoding: (x == 0 && y != 6 && z == 4)
   action:
@@ -165,10 +176,20 @@ INC $RY:
         - [registers.$RY(), 0x00]
         - [registers.flag_z(), 1]
         - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RY(0xEF)
+      expect:
+        - [registers.$RY(), 0xF0]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 0]
         - [registers.pc(), 0x01]
 
+# Flags: Z 0 H -
 INC (HL):
   encoding: (x == 0 && y == 6 && z == 4)
   mcycle_duration: 3
@@ -189,28 +210,63 @@ INC (HL):
         - [registers.flag_h(), 0]
         - [registers.flag_c(), 0]
         - [registers.pc(), 0x01]
+    - set:
+        - mmu.write8(0xff00, 0xEF)
+        - registers.set_hl(0xff00)
+      expect:
+        - [registers.hl(), 0xff00]
+        - [mmu.read8(0xff00), 0xF0]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
 
+# Flags: Z 1 H -
 DEC $RY:
   encoding: (x == 0 && y != 6 && z == 5)
   action:
     self.registers.inc_pc(1);
-    self.registers.set_$RY(self.registers.$RY().wrapping_sub(1)); 
+    let (val, flags) = self.dec8(self.registers.$RY());
+    self.registers.set_$RY(val); 
+    self.registers.set_flags(flags);
   tests:
     - set:
         - registers.set_$RY(0xFF)
       expect:
         - [registers.$RY(), 0xFE]
         - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
+        - [registers.flag_n(), 1]
         - [registers.flag_h(), 0]
         - [registers.flag_c(), 0]
         - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RY(0x00)
+      expect:
+        - [registers.$RY(), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RY(0x01)
+      expect:
+        - [registers.$RY(), 0x00]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+# Flags: Z 1 H -
 DEC (HL):
   encoding: (x == 0 && y == 6 && z == 5)
   mcycle_duration: 3
   action:
     self.registers.inc_pc(1);
-    self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()).wrapping_sub(1)); 
+    let (val, flags) = self.dec8(self.mmu.read8(self.registers.hl()));
+    self.registers.set_flags(flags);
+    self.mmu.write8(self.registers.hl(), val); 
   tests:
     - set:
         - mmu.write8(0xff00, 0xDF)
@@ -219,11 +275,34 @@ DEC (HL):
         - [registers.hl(), 0xff00]
         - [mmu.read8(0xff00), 0xDE]
         - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - mmu.write8(0xff00, 0xF0)
+        - registers.set_hl(0xff00)
+      expect:
+        - [registers.hl(), 0xff00]
+        - [mmu.read8(0xff00), 0xEF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - mmu.write8(0xff00, 0x01)
+        - registers.set_hl(0xff00)
+      expect:
+        - [registers.hl(), 0xff00]
+        - [mmu.read8(0xff00), 0x00]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
         - [registers.flag_h(), 0]
         - [registers.flag_c(), 0]
         - [registers.pc(), 0x01]
 # 16 bit inc/dec
+# Flags: - - - -
 INC $RRP:
   encoding: (x == 0 && z == 3 && q == 0)
   mcycle_duration: 2
@@ -240,7 +319,17 @@ INC $RRP:
         - [registers.flag_h(), 0]
         - [registers.flag_c(), 0]
         - [registers.pc(), 0x01]
-
+    - set:
+        - registers.set_$RRP(0xABCD)
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.$RRP(), 0xABCE]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
+# Flags: - - - -
 DEC $RRP:
   encoding: (x == 0 && z == 3 && q == 1)
   mcycle_duration: 2
@@ -257,14 +346,76 @@ DEC $RRP:
         - [registers.flag_h(), 0]
         - [registers.flag_c(), 0]
         - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RRP(0xABCD)
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.$RRP(), 0xABCC]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
 
 # 16 bit immediate load
+# Flags: - 0 H C
 ADD HL, $RRP:
-  encoding: (x == 0 && z == 1 && q == 1)
+  encoding: (x == 0 && z == 1 && q == 1 && y != 5) # Split the `ADD HL, HL` into it's own encoding so we can customise the tests
   mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
     self.alu_add_hl(self.registers.$RRP());
+  tests:
+    - set:
+        - registers.set_$RRP(0x1111)
+        - registers.set_hl(0xABCD)
+      expect:
+        - [registers.hl(), 0xBCDE]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RRP(0x0001)
+        - registers.set_hl(0x0FFF)
+      expect:
+        - [registers.hl(), 0x1000]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.set_$RRP(0x0001)
+        - registers.set_hl(0xFFFF)
+      expect:
+        - [registers.hl(), 0x0000]
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        - [registers.pc(), 0x01]
+
+# Flags: - 0 H C
+ADD HL, HL:
+  encoding: (x == 0 && z == 1 && q == 1 && y == 5)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.alu_add_hl(self.registers.hl());
+  tests:
+    - set:
+        - registers.set_hl(0x1234)
+      expect:
+        - [registers.hl(), 0x2468]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+
+# Flags: - - - -
 LD $RRP, n16:
   encoding: (x == 0 && z == 1 && q == 0)
   mcycle_duration: 3
@@ -272,9 +423,27 @@ LD $RRP, n16:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
     self.registers.inc_pc(2);
-    self.registers.set_hl(imm);
-
+    self.registers.set_$RRP(imm);
+  tests:
+    - set:
+        - mmu.write16(0x0001, 0x1234)
+      expect:
+        - [registers.$RRP(), 0x1234]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x03]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        
 # 8 bit Load literal
+# Flags: - - - -
 LD $RY, n8:
   encoding: (x == 0 && y != 6 && z == 6)
   mcycle_duration: 2
@@ -283,6 +452,25 @@ LD $RY, n8:
     let imm = self.mmu.read8(self.registers.pc());
     self.registers.inc_pc(1);
     self.registers.set_$RY(imm);
+  tests:
+    - set:
+        - mmu.write8(0x01, 0xAB)
+      expect:
+        - [registers.$RY(), 0xAB]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x02]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+        
+# Flags: - - - -
 LD (HL), n8:
   encoding: (x == 0 && y == 6 && z == 6)
   mcycle_duration: 3
@@ -291,29 +479,126 @@ LD (HL), n8:
     let imm = self.mmu.read8(self.registers.pc());
     self.registers.inc_pc(1);
     self.mmu.write8(self.registers.hl(), imm);
+  tests:
+    - set:
+        - registers.set_hl(0x0F00)
+        - mmu.write8(0x01, 0xFF)
+      expect:
+        - [mmu.read8(0x0F00), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x02]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
 
 # 16 bit indirect loads
+# Flags: - - - -
 LD (BC), A:
   encoding: (x == 0 && z == 2 && q == 0 && p == 0)
   mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
     self.mmu.write8(self.registers.bc(), self.registers.a());
+  tests:
+    - set:
+        - registers.set_bc(0x0F00)
+        - registers.set_a(0xFF)
+      expect:
+        - [mmu.read8(0x0F00), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+
+# Flags: - - - -
 LD A, (BC):
   encoding: (x == 0 && z == 2 && q == 1 && p == 0)
   mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
     self.registers.set_a(self.mmu.read8(self.registers.bc()));
+  tests:
+    - set:
+        - registers.set_bc(0x0F00)
+        - mmu.write8(0x0F00, 0xFF)
+      expect:
+        - [registers.a(), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+
+# Flags: - - - -
 LD (DE), A:
   encoding: (x == 0 && z == 2 && q == 0 && p == 1)
   mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
     self.mmu.write8(self.registers.de(), self.registers.a());
+  tests:
+    - set:
+        - registers.set_de(0x0F00)
+        - registers.set_a(0xFF)
+      expect:
+        - [mmu.read8(0x0F00), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+
+# Flags: - - - -
 LD A, (DE):
   encoding: (x == 0 && z == 2 && q == 1 && p == 1)
   mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
     self.registers.set_a(self.mmu.read8(self.registers.de()));
+  tests:
+    - set:
+        - registers.set_de(0x0F00)
+        - mmu.write8(0x0F00, 0xFF)
+      expect:
+        - [registers.a(), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
