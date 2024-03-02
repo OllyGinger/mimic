@@ -99,8 +99,10 @@ impl Generator {
         writeln!(
             file,
             "
+            /// Auto Generated - Do not modify
+            ///
             /// Each opcode is calculated as a machine-cycle (time it takes to complete a sub-operation, eg a fetch)
-            /// Returns: Duration of the tick in T-States, which is machine cycles * 4. 
+            /// Returns: Duration of the tick in T-States. Machine cycles are t states * 4. 
             pub fn tick(&mut self) -> u32 {{
                 let next_opcode = self.read_next_opcode();
                 let mcycles;
@@ -108,11 +110,24 @@ impl Generator {
         )
         .unwrap();
 
-        for op in &self.ops {
-            self.generate_op_match_arm_token_stream(file, &op.1);
+        for opcode in 0..256 {
+            if self.ops.contains_key(&opcode) {
+                self.generate_op_match_arm_token_stream(file, &self.ops[&opcode]);
+            } else {
+                writeln!(
+                    file,
+                    "
+                // ({:o} octal)
+                {:#06x} => {{
+                    unreachable!();
+                }}
+                ",
+                    opcode, opcode,
+                )
+                .unwrap();
+            }
         }
 
-        writeln!(file, "_ => unreachable!()").unwrap();
         writeln!(file, "}}").unwrap();
         writeln!(file, "mcycles").unwrap();
         writeln!(file, "}}").unwrap();
@@ -125,24 +140,27 @@ impl Generator {
         let action = &op.code;
         let opcode = op.opcode;
 
-        writeln!(
+        write!(
             file,
             "
         // {}
         // ({:o} octal) - {}t
         {:#06x} => {{
             {}
-            mcycles = {};
-        }}
         ",
             op.mnemonic,
             opcode,
             op.mcycle_duration,
             opcode,
-            action.to_string(),
-            op.mcycle_duration,
+            action.to_string()
         )
         .unwrap();
+
+        if !op.conditional_duration {
+            write!(file, "mcycles = {};", op.mcycle_duration).unwrap();
+        }
+
+        writeln!(file, "}}").unwrap();
     }
 
     fn generate_tests(&self, file: &mut File) {
@@ -180,9 +198,16 @@ impl Generator {
                 .replace(",", "")
                 .replace("(", "ind_")
                 .replace(")", "_ind")
+                .replace("+", "_inc_")
+                .replace("-", "_dec_")
                 .to_lowercase();
             for (idx, test) in tests.iter().enumerate() {
-                writeln!(file, "#[test]").unwrap();
+                writeln!(
+                    file,
+                    "#[test]
+                #[allow(non_snake_case)]"
+                )
+                .unwrap();
                 writeln!(
                     file,
                     "fn test_op_{:#04x}_{op_name}_test{idx}(){{",

@@ -139,4 +139,86 @@ impl CPU {
         self.registers.set_flag_c(carry);
         self.registers.set_hl(result);
     }
+
+    pub fn alu_rlca(&mut self) {
+        let val = self.registers.a();
+        let carry = val & 0x80;
+        self.registers.set_a(val.rotate_left(1));
+        self.registers.set_flag_z(false);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+    }
+
+    pub fn alu_rla(&mut self) {
+        let val = self.registers.a();
+        let carry = val & 0x80;
+        self.registers
+            .set_a((val << 1) | self.registers.flag_c() as u8);
+        self.registers.set_flag_z(false);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+    }
+
+    pub fn alu_rrca(&mut self) {
+        let val = self.registers.a();
+        let carry = val & 0x01;
+        self.registers.set_a(val.rotate_right(1));
+        self.registers.set_flag_z(false);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+    }
+
+    pub fn alu_rra(&mut self) {
+        let val = self.registers.a();
+        let carry = val & 0x01;
+        self.registers
+            .set_a((val >> 1) | ((self.registers.flag_c() as u8) << 7));
+        self.registers.set_flag_z(false);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+    }
+
+    pub fn alu_daa(&mut self) {
+        let mut a = self.registers.a();
+        let mut ajd = if self.registers.flag_c() { 0x60 } else { 0x0 };
+        if self.registers.flag_h() {
+            ajd |= 0x06;
+        }
+        if !self.registers.flag_n() {
+            if a & 0x0f > 0x09 {
+                ajd |= 0x06;
+            }
+            if a > 0x99 {
+                ajd |= 0x60;
+            }
+            a = a.wrapping_add(ajd);
+        } else {
+            a = a.wrapping_sub(ajd);
+        }
+
+        self.registers.set_a(a);
+        self.registers.set_flag_z(a == 0x0);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(ajd >= 0x60);
+    }
+
+    pub fn cc_nz(&self) -> bool {
+        !self.cc_z()
+    }
+
+    pub fn cc_z(&self) -> bool {
+        self.registers.flag_z()
+    }
+
+    pub fn cc_nc(&self) -> bool {
+        !self.cc_c()
+    }
+
+    pub fn cc_c(&self) -> bool {
+        self.registers.flag_c()
+    }
 }

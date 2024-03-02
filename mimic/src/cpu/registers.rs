@@ -213,6 +213,20 @@ impl Registers {
         self.f = f;
     }
 
+    /// This is used in the unit tests for cpu opcodes
+    /// It's written this way so that it can make use
+    /// of the CC opcode deocde table, even though it
+    /// only sets the c flag, the 'n' part is for the negation
+    /// of the flag when it's tested
+    #[cfg(test)]
+    pub fn set_flag_nc(&mut self, flag: bool) {
+        self.set_flag_c(flag);
+    }
+    #[cfg(test)]
+    pub fn set_flag_nz(&mut self, flag: bool) {
+        self.set_flag_z(flag);
+    }
+
     #[cfg(test)]
     pub fn enable_all_flags(&mut self) {
         self.f = Flags::all();

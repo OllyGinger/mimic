@@ -602,3 +602,505 @@ LD A, (DE):
         - [registers.flag_n(), 1]
         - [registers.flag_h(), 1]
         - [registers.flag_c(), 1]
+
+# Flags: - - - -
+LD (HL+), A:
+  encoding: (x == 0 && y == 4 && z == 2)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.registers.a());
+    self.registers.set_hl(self.registers.hl().wrapping_add(1));
+  tests:
+    - set:
+        - registers.set_hl(0x0F00)
+        - registers.set_a(0xFF)
+      expect:
+        - [mmu.read8(0x0F00), 0xFF]
+        - [registers.hl(), 0x0F01]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+# Flags: - - - -
+LD (HL-), A:
+  encoding: (x == 0 && y == 6 && z == 2)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.registers.a());
+    self.registers.set_hl(self.registers.hl().wrapping_sub(1));
+  tests:
+    - set:
+        - registers.set_hl(0x0F00)
+        - registers.set_a(0xFF)
+      expect:
+        - [mmu.read8(0x0F00), 0xFF]
+        - [registers.hl(), 0x0EFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+# Flags: - - - -
+LD A, (HL+):
+  encoding: (x == 0 && y == 5 && z == 2)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_a(self.mmu.read8(self.registers.hl()));
+    self.registers.set_hl(self.registers.hl().wrapping_add(1));
+  tests:
+    - set:
+        - registers.set_hl(0x0F00)
+        - mmu.write8(0x0F00, 0xFF)
+      expect:
+        - [registers.a(), 0xFF]
+        - [registers.hl(), 0x0F01]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+# Flags: - - - -
+LD A, (HL-):
+  encoding: (x == 0 && y == 7 && z == 2)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_a(self.mmu.read8(self.registers.hl()));
+    self.registers.set_hl(self.registers.hl().wrapping_sub(1));
+  tests:
+    - set:
+        - registers.set_hl(0x0F00)
+        - mmu.write8(0x0F00, 0xFF)
+      expect:
+        - [registers.a(), 0xFF]
+        - [registers.hl(), 0x0EFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+        - [registers.pc(), 0x01]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+
+# 0 0 0 C
+RLCA:
+  encoding: (x == 0 && y == 0 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.alu_rlca();
+  tests:
+    - set:
+        - registers.set_a(0x01)
+      expect:
+        - [registers.a(), 0x02]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]     
+    - set:
+        - registers.set_a(0x7f)
+      expect:
+        - [registers.a(), 0xFE]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]        
+    - set:
+        - registers.set_a(0xFE)
+      expect:
+        - [registers.a(), 0xFD]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]  
+
+# 0 0 0 C
+RLA:
+  encoding: (x == 0 && y == 2 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.alu_rla();
+  tests:
+    - set:
+        - registers.set_a(0x01)
+      expect:
+        - [registers.a(), 0x02]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+    - set:
+        - registers.set_a(0x01)
+        - registers.set_flag_c(true);
+      expect:
+        - [registers.a(), 0x03]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+    - set:
+        - registers.set_a(0x7f)
+      expect:
+        - [registers.a(), 0xFE]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+    - set:
+        - registers.set_a(0x7f)
+        - registers.set_flag_c(true);
+      expect:
+        - [registers.a(), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]      
+    - set:
+        - registers.set_a(0xFE)
+      expect:
+        - [registers.a(), 0xFC]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]
+    - set:
+        - registers.set_a(0xFE)
+        - registers.set_flag_c(true);
+      expect:
+        - [registers.a(), 0xFD]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]
+
+# 0 0 0 C
+RRCA:
+  encoding: (x == 0 && y == 1 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.alu_rrca();
+  tests:
+    - set:
+        - registers.set_a(0x01)
+      expect:
+        - [registers.a(), 0x80]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]     
+    - set:
+        - registers.set_a(0x7f)
+      expect:
+        - [registers.a(), 0xBF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]        
+    - set:
+        - registers.set_a(0xFE)
+      expect:
+        - [registers.a(), 0x7F]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]  
+
+# 0 0 0 C
+RRA:
+  encoding: (x == 0 && y == 3 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.alu_rra();
+  tests:
+    - set:
+        - registers.set_a(0x01)
+      expect:
+        - [registers.a(), 0x00]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]
+    - set:
+        - registers.set_a(0x01)
+        - registers.set_flag_c(true);
+      expect:
+        - [registers.a(), 0x80]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]
+    - set:
+        - registers.set_a(0x7f)
+      expect:
+        - [registers.a(), 0x3F]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]
+    - set:
+        - registers.set_a(0x7f)
+        - registers.set_flag_c(true);
+      expect:
+        - [registers.a(), 0xBF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 1]      
+    - set:
+        - registers.set_a(0xFE)
+      expect:
+        - [registers.a(), 0x7F]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+    - set:
+        - registers.set_a(0xFE)
+        - registers.set_flag_c(true);
+      expect:
+        - [registers.a(), 0xFF]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+
+# 0 0 0 C
+LD (n16), SP:
+  encoding: (x == 0 && y == 1 && z == 0)
+  mcycle_duration: 5
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    self.registers.inc_pc(2);
+    self.mmu.write16(imm, self.registers.sp());
+  tests:
+    - set:
+        - mmu.write16(0x1, 0xDEAF)
+        - registers.set_sp(0x1234)
+      expect:
+        - [mmu.read16(0xDEAF), 0x1234]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+    - set:
+        - registers.enable_all_flags() # Check flags aren't touched
+      expect:
+        - [registers.flag_z(), 1]
+        - [registers.flag_n(), 1]
+        - [registers.flag_h(), 1]
+        - [registers.flag_c(), 1]
+
+# 0 0 0 C
+JR n8:
+  encoding: (x == 0 && y == 3 && z == 0)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc()) as i8;
+    self.registers.inc_pc(1);
+    self.registers.set_pc(self.registers.pc().wrapping_add(imm as u16));
+  tests:
+    - set:
+        - mmu.write8(0x0001, 0x12)
+      expect:
+        - [registers.pc(), 0x14]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+    - set:
+        - mmu.write8(0x0001, 0xFF)
+      expect:
+        - [registers.pc(), 0x0001]
+        - [registers.flag_z(), 0]
+        - [registers.flag_n(), 0]
+        - [registers.flag_h(), 0]
+        - [registers.flag_c(), 0]
+
+# 0 0 0 C
+JR $CC-4, n8:
+  encoding: (x == 0 && y >= 4 && y <= 7 && z == 0)
+  conditional_duration: true
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc()) as i8;
+    self.registers.inc_pc(1);
+    if self.cc_$CC-4() {
+      self.registers.set_pc(self.registers.pc().wrapping_add(imm as u16));
+      mcycles = 3;
+    } else {
+      mcycles = 2;
+    }
+  # TODO:
+  #tests:
+  #  - set:
+  #      - mmu.write8(0x0001, 0x12)
+  #    expect: # False condition
+  #      - [registers.pc(), 0x2]
+  #      - [registers.flag_z(), 0]
+  #      - [registers.flag_n(), 0]
+  #      - [registers.flag_h(), 0]
+  #      - [registers.flag_c(), 0]
+  #  - set:
+  #      - mmu.write8(0x0001, 0x12)
+  #      - registers.set_flag_$CC-4(true);
+  #    expect:
+  #      - [registers.pc(), 0x0001]
+  #      - [registers.flag_z(), 0]
+  #      - [registers.flag_n(), 0]
+  #      - [registers.flag_h(), 0]
+  #      - [registers.flag_c(), 0]
+
+# Z - 0 C
+DAA:
+  encoding: (x == 0 && y == 4 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.alu_daa();
+  tests:
+      # Tests verify operation table for DAA definition in http://www.z80.info/zip/z80cpu_um.pdf
+      - set: # Row 0
+          - registers.set_flag_c(false);
+          - registers.set_flag_h(false);
+          - registers.set_a(0x00);
+        expect:
+          - [registers.pc(), 0x1]
+          - [registers.flag_c(), 0]
+          - [registers.a(), 0x00]
+      - set: # Row 1
+          - registers.set_flag_c(false);
+          - registers.set_flag_h(false);
+          - registers.set_a(0x0F);
+        expect:
+          - [registers.pc(), 0x1]
+          - [registers.flag_c(), 0]
+          - [registers.a(), 0x15]
+      - set: # Row 2
+          - registers.set_flag_c(false);
+          - registers.set_flag_h(true);
+          - registers.set_a(0x00);
+        expect:
+          - [registers.pc(), 0x1]
+          - [registers.flag_c(), 0]
+          - [registers.a(), 0x06]
+    # TODO: Complete these
+
+# - 1 1 -
+CPL:
+  encoding: (x == 0 && y == 5 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_a(!self.registers.a());
+    self.registers.set_flag_n(true);
+    self.registers.set_flag_h(true);
+  tests:
+      - set:
+          - registers.set_a(0x00);
+        expect:
+          - [registers.pc(), 0x1]
+          - [registers.a(), 0xFF]
+          - [registers.flag_n(), 1]
+          - [registers.flag_h(), 1]
+          - [registers.flag_c(), 0]
+          - [registers.flag_z(), 0]
+      - set:
+          - registers.set_a(0xFF);
+        expect:
+          - [registers.pc(), 0x1]
+          - [registers.a(), 0x00]
+          - [registers.flag_n(), 1]
+          - [registers.flag_h(), 1]
+          - [registers.flag_c(), 0]
+          - [registers.flag_z(), 0]
+      - set:
+          - registers.enable_all_flags();
+        expect:
+          - [registers.flag_n(), 1]
+          - [registers.flag_h(), 1]
+          - [registers.flag_z(), 1]
+          - [registers.flag_c(), 1]
+
+# - 0 0 1
+SCF:
+  encoding: (x == 0 && y == 6 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_flag_c(true);
+    self.registers.set_flag_n(false);
+    self.registers.set_flag_h(false);
+  tests:
+      - set:
+          - registers.enable_all_flags();
+        expect:
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 0]
+          - [registers.flag_z(), 1]
+          - [registers.flag_c(), 1]
+      - set:
+        expect:
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 0]
+          - [registers.flag_z(), 0]
+          - [registers.flag_c(), 1]
+
+# - 0 0 C
+CCF:
+  encoding: (x == 0 && y == 7 && z == 7)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_flag_c(!self.registers.flag_c());
+    self.registers.set_flag_n(false);
+    self.registers.set_flag_h(false);
+  tests:
+      - set:
+          - registers.enable_all_flags();
+        expect:
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 0]
+          - [registers.flag_z(), 1]
+          - [registers.flag_c(), 0]
+      - set:
+        expect:
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 0]
+          - [registers.flag_z(), 0]
+          - [registers.flag_c(), 1]

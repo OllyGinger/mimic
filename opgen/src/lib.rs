@@ -16,7 +16,8 @@ pub struct EncodingPattern {
     pub length: u8,
     #[serde(default = "default_serde_duration")]
     pub mcycle_duration: u8,
-    pub mcycle_conditional_duration: Option<u8>,
+    #[serde(default = "default_serde_conditional_duration")]
+    pub conditional_duration: bool,
     pub tests: Option<Vec<EncodingTest>>,
 
     #[serde(skip)]
@@ -31,6 +32,10 @@ fn default_serde_length() -> u8 {
 
 fn default_serde_duration() -> u8 {
     1
+}
+
+fn default_serde_conditional_duration() -> bool {
+    false
 }
 
 #[derive(Deserialize, PartialEq, Debug, Default, Clone)]

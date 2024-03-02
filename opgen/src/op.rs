@@ -7,7 +7,7 @@ pub struct Op {
     pub mnemonic: String,
     pub code: TokenStream,
     pub mcycle_duration: u8,
-    pub mcycle_conditional_duration: Option<u8>,
+    pub conditional_duration: bool,
 
     pub tests: Option<Vec<EncodingTest>>,
 }
@@ -15,7 +15,7 @@ pub struct Op {
 pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) -> Op {
     let new_code = handle_action_replacements(opcode, &encoding_pattern.action);
     let new_mnemonic = handle_mnemonic_replacements(opcode, &encoding_pattern.mnemonic);
-    let mut tests = encoding_pattern.tests.clone(); // Cloning Option<Vec<EncodingTest>> to modify it
+    let mut tests = encoding_pattern.tests.clone();
     if let Some(actual_tests) = &mut tests {
         for test in actual_tests {
             for k in test.set.iter_mut() {
@@ -32,7 +32,7 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
         mnemonic: new_mnemonic,
         code: new_code.parse().unwrap(),
         mcycle_duration: encoding_pattern.mcycle_duration,
-        mcycle_conditional_duration: encoding_pattern.mcycle_conditional_duration,
+        conditional_duration: encoding_pattern.conditional_duration,
         tests: tests.clone(),
     }
 }
@@ -40,21 +40,44 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
 fn handle_action_replacements(opcode: u32, action: &String) -> String {
     let encoding_params: EncodingParams = opcode.into();
 
-    action
+    let mut ret = action
         .replace("$RY", &get_register_name(encoding_params.y))
         .replace("$RZ", &get_register_name(encoding_params.z))
         .replace("$RRP", &get_register_pair_name(encoding_params.p))
-        .replace("$ALU", &get_alu_function(encoding_params.y))
+        .replace("$ALU", &get_alu_function(encoding_params.y));
+
+    if encoding_params.y >= 4 {
+        ret = ret.replace(
+            "$CC-4",
+            &get_conditional_call_function(encoding_params.y.wrapping_sub(4) as u8),
+        );
+    }
+    ret = ret.replace("$CC", &get_conditional_call_function(encoding_params.y));
+
+    ret
 }
 
 fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
     let encoding_params: EncodingParams = opcode.into();
 
-    mnemonic
+    let mut ret = mnemonic
         .replace("$RY", &get_register_description(encoding_params.y))
         .replace("$RZ", &get_register_description(encoding_params.z))
         .replace("$RRP", &get_register_pair_description(encoding_params.p))
-        .replace("$ALU", &get_alu_function_description(encoding_params.y))
+        .replace("$ALU", &get_alu_function_description(encoding_params.y));
+
+    if encoding_params.y >= 4 {
+        ret = ret.replace(
+            "$CC-4",
+            &get_conditional_call_function_description(encoding_params.y.wrapping_sub(4) as u8),
+        );
+    }
+    ret = ret.replace(
+        "$CC",
+        &get_conditional_call_function_description(encoding_params.y),
+    );
+
+    ret
 }
 
 fn get_register_name(idx: u8) -> String {
@@ -77,12 +100,21 @@ fn get_alu_function_description(idx: u8) -> String {
 }
 
 fn get_register_pair_name(idx: u8) -> String {
-    const REGISTER: &'static [&'static str] = &["bc", "de", "hl", "sp"];
+    const REGISTER: &'static [&'static str] = &["bc", "de", "hl", "sp", "", "", "", ""];
     REGISTER[idx as usize].to_string()
 }
 
 fn get_register_pair_description(idx: u8) -> String {
     get_register_pair_name(idx).to_uppercase()
+}
+
+fn get_conditional_call_function(idx: u8) -> String {
+    const FUNC: &'static [&'static str] = &["nz", "z", "nc", "c", "", "", "", ""];
+    FUNC[idx as usize].to_string()
+}
+
+fn get_conditional_call_function_description(idx: u8) -> String {
+    get_conditional_call_function(idx).to_uppercase()
 }
 
 pub(crate) struct EncodingParams {
