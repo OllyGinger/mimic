@@ -30,10 +30,11 @@ impl CPU {
     // Currently only supports 0xCB prefix (fine for SM83 CPU)
     pub fn read_next_opcode(&mut self) -> NextOpcode {
         let prefix_or_opcode = self.mmu.read8(self.registers.pc());
-        let prefix: Option<u8> = None;
+        let mut prefix: Option<u8> = None;
         let opcode;
         if prefix_or_opcode == 0xCB {
             opcode = self.mmu.read8(self.registers.pc() + 1);
+            prefix = Some(0xCB);
         } else {
             opcode = prefix_or_opcode;
         }

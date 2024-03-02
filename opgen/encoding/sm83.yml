@@ -763,7 +763,7 @@ RLA:
         - [registers.flag_c(), 0]
     - set:
         - registers.set_a(0x01)
-        - registers.set_flag_c(true);
+        - registers.set_flag_c(true)
       expect:
         - [registers.a(), 0x03]
         - [registers.flag_z(), 0]
@@ -780,7 +780,7 @@ RLA:
         - [registers.flag_c(), 0]
     - set:
         - registers.set_a(0x7f)
-        - registers.set_flag_c(true);
+        - registers.set_flag_c(true)
       expect:
         - [registers.a(), 0xFF]
         - [registers.flag_z(), 0]
@@ -797,7 +797,7 @@ RLA:
         - [registers.flag_c(), 1]
     - set:
         - registers.set_a(0xFE)
-        - registers.set_flag_c(true);
+        - registers.set_flag_c(true)
       expect:
         - [registers.a(), 0xFD]
         - [registers.flag_z(), 0]
@@ -856,7 +856,7 @@ RRA:
         - [registers.flag_c(), 1]
     - set:
         - registers.set_a(0x01)
-        - registers.set_flag_c(true);
+        - registers.set_flag_c(true)
       expect:
         - [registers.a(), 0x80]
         - [registers.flag_z(), 0]
@@ -873,7 +873,7 @@ RRA:
         - [registers.flag_c(), 1]
     - set:
         - registers.set_a(0x7f)
-        - registers.set_flag_c(true);
+        - registers.set_flag_c(true)
       expect:
         - [registers.a(), 0xBF]
         - [registers.flag_z(), 0]
@@ -890,7 +890,7 @@ RRA:
         - [registers.flag_c(), 0]
     - set:
         - registers.set_a(0xFE)
-        - registers.set_flag_c(true);
+        - registers.set_flag_c(true)
       expect:
         - [registers.a(), 0xFF]
         - [registers.flag_z(), 0]
@@ -996,25 +996,25 @@ DAA:
   tests:
       # Tests verify operation table for DAA definition in http://www.z80.info/zip/z80cpu_um.pdf
       - set: # Row 0
-          - registers.set_flag_c(false);
-          - registers.set_flag_h(false);
-          - registers.set_a(0x00);
+          - registers.set_flag_c(false)
+          - registers.set_flag_h(false)
+          - registers.set_a(0x00)
         expect:
           - [registers.pc(), 0x1]
           - [registers.flag_c(), 0]
           - [registers.a(), 0x00]
       - set: # Row 1
-          - registers.set_flag_c(false);
-          - registers.set_flag_h(false);
-          - registers.set_a(0x0F);
+          - registers.set_flag_c(false)
+          - registers.set_flag_h(false)
+          - registers.set_a(0x0F)
         expect:
           - [registers.pc(), 0x1]
           - [registers.flag_c(), 0]
           - [registers.a(), 0x15]
       - set: # Row 2
-          - registers.set_flag_c(false);
-          - registers.set_flag_h(true);
-          - registers.set_a(0x00);
+          - registers.set_flag_c(false)
+          - registers.set_flag_h(true)
+          - registers.set_a(0x00)
         expect:
           - [registers.pc(), 0x1]
           - [registers.flag_c(), 0]
@@ -1032,7 +1032,7 @@ CPL:
     self.registers.set_flag_h(true);
   tests:
       - set:
-          - registers.set_a(0x00);
+          - registers.set_a(0x00)
         expect:
           - [registers.pc(), 0x1]
           - [registers.a(), 0xFF]
@@ -1041,7 +1041,7 @@ CPL:
           - [registers.flag_c(), 0]
           - [registers.flag_z(), 0]
       - set:
-          - registers.set_a(0xFF);
+          - registers.set_a(0xFF)
         expect:
           - [registers.pc(), 0x1]
           - [registers.a(), 0x00]
@@ -1050,7 +1050,7 @@ CPL:
           - [registers.flag_c(), 0]
           - [registers.flag_z(), 0]
       - set:
-          - registers.enable_all_flags();
+          - registers.enable_all_flags()
         expect:
           - [registers.flag_n(), 1]
           - [registers.flag_h(), 1]
@@ -1068,7 +1068,7 @@ SCF:
     self.registers.set_flag_h(false);
   tests:
       - set:
-          - registers.enable_all_flags();
+          - registers.enable_all_flags()
         expect:
           - [registers.flag_n(), 0]
           - [registers.flag_h(), 0]
@@ -1092,7 +1092,7 @@ CCF:
     self.registers.set_flag_h(false);
   tests:
       - set:
-          - registers.enable_all_flags();
+          - registers.enable_all_flags()
         expect:
           - [registers.flag_n(), 0]
           - [registers.flag_h(), 0]
@@ -1104,3 +1104,44 @@ CCF:
           - [registers.flag_h(), 0]
           - [registers.flag_z(), 0]
           - [registers.flag_c(), 1]
+
+# ####### 0xCB Prefixed Ops ########
+# --- Quadrant 1 ---
+# Z 0 1 -
+BIT $NY, $RZ:
+  prefix: 0xCB
+  encoding: (x == 1 && y >= 0 && y <= 7 && z != 6)  
+  mcycle_duration: 2
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    self.registers.set_flag_h(true);
+    self.registers.set_flag_n(false);
+    self.registers.set_flag_z(self.registers.$RZ() & (1 << $NY) == 0);
+  tests:
+      - set:
+          - registers.enable_all_flags()
+        expect:
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 1]
+      - set:
+          - registers.set_$RZ(1 << $NY)
+        expect:
+          - [registers.flag_z(), 0]
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 1]
+          - [registers.flag_c(), 0]
+      - set:
+          - registers.set_$RZ(0xFF & !(1 << $NY))
+        expect:
+          - [registers.flag_z(), 1]
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 1]
+          - [registers.flag_c(), 0]
+      - set:
+          - registers.set_$RZ(0)
+        expect:
+          - [registers.flag_z(), 1]
+          - [registers.flag_n(), 0]
+          - [registers.flag_h(), 1]
+          - [registers.flag_c(), 0]

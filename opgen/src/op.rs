@@ -8,6 +8,7 @@ pub struct Op {
     pub code: TokenStream,
     pub mcycle_duration: u8,
     pub conditional_duration: bool,
+    pub prefix: Option<u8>,
 
     pub tests: Option<Vec<EncodingTest>>,
 }
@@ -33,6 +34,7 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
         code: new_code.parse().unwrap(),
         mcycle_duration: encoding_pattern.mcycle_duration,
         conditional_duration: encoding_pattern.conditional_duration,
+        prefix: encoding_pattern.prefix,
         tests: tests.clone(),
     }
 }
@@ -44,7 +46,8 @@ fn handle_action_replacements(opcode: u32, action: &String) -> String {
         .replace("$RY", &get_register_name(encoding_params.y))
         .replace("$RZ", &get_register_name(encoding_params.z))
         .replace("$RRP", &get_register_pair_name(encoding_params.p))
-        .replace("$ALU", &get_alu_function(encoding_params.y));
+        .replace("$ALU", &get_alu_function(encoding_params.y))
+        .replace("$NY", &encoding_params.y.to_string());
 
     if encoding_params.y >= 4 {
         ret = ret.replace(
@@ -64,7 +67,8 @@ fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
         .replace("$RY", &get_register_description(encoding_params.y))
         .replace("$RZ", &get_register_description(encoding_params.z))
         .replace("$RRP", &get_register_pair_description(encoding_params.p))
-        .replace("$ALU", &get_alu_function_description(encoding_params.y));
+        .replace("$ALU", &get_alu_function_description(encoding_params.y))
+        .replace("$NY", &encoding_params.y.to_string());
 
     if encoding_params.y >= 4 {
         ret = ret.replace(

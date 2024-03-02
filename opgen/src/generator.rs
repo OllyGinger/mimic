@@ -1,6 +1,6 @@
 use crate::{errors::BuildError, op, op::Op, parser, EncodingPattern};
 use evalexpr::*;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
 use std::{io::Write, path::PathBuf};
@@ -8,12 +8,14 @@ use std::{io::Write, path::PathBuf};
 pub struct Generator {
     encodings: HashMap<String, EncodingPattern>,
     ops: BTreeMap<u32, Op>,
+    prefixes: HashSet<u8>,
 }
 
 pub fn new() -> Generator {
     Generator {
         encodings: HashMap::<String, EncodingPattern>::new(),
         ops: BTreeMap::<u32, Op>::new(),
+        prefixes: HashSet::<u8>::new(),
     }
 }
 
@@ -38,6 +40,13 @@ impl Generator {
     }
 
     fn process_opcodes(&mut self) {
+        // Add any prefixes to a list for processing later
+        for op_encoding in &self.encodings {
+            if let Some(prefix) = op_encoding.1.prefix {
+                self.prefixes.insert(prefix);
+            }
+        }
+
         for opcode in 0..255 {
             let encoding_params: op::EncodingParams = opcode.into();
 
@@ -104,29 +113,71 @@ impl Generator {
             /// Each opcode is calculated as a machine-cycle (time it takes to complete a sub-operation, eg a fetch)
             /// Returns: Duration of the tick in T-States. Machine cycles are t states * 4. 
             pub fn tick(&mut self) -> u32 {{
-                let next_opcode = self.read_next_opcode();
+                let mut next_opcode = self.read_next_opcode();
                 let mcycles;
-                match next_opcode.opcode {{"
+                match next_opcode.prefix {{"
         )
         .unwrap();
 
+        // No prefix
+        writeln!(file, "None => {{").unwrap();
+        writeln!(file, "match next_opcode.opcode {{").unwrap();
         for opcode in 0..256 {
-            if self.ops.contains_key(&opcode) {
+            if self.ops.contains_key(&opcode) && self.ops[&opcode].prefix == None {
                 self.generate_op_match_arm_token_stream(file, &self.ops[&opcode]);
             } else {
                 writeln!(
                     file,
                     "
-                // ({:o} octal)
-                {:#06x} => {{
-                    unreachable!();
-                }}
-                ",
+                    // ({:o} octal)
+                    {:#04X} => {{
+                        unreachable!();
+                    }}
+                    ",
                     opcode, opcode,
                 )
                 .unwrap();
             }
         }
+        writeln!(file, "}}").unwrap();
+        writeln!(file, "}}").unwrap();
+
+        // Prefix
+        writeln!(file, "Some(prefix) => {{").unwrap();
+        writeln!(file, "self.registers.inc_pc(1);").unwrap();
+        writeln!(file, "next_opcode = self.read_next_opcode();").unwrap();
+        writeln!(file, "match prefix {{").unwrap();
+        for prefix in &self.prefixes {
+            writeln!(file, "{:#04X} => {{", prefix).unwrap();
+            writeln!(file, "match next_opcode.opcode {{").unwrap();
+            for opcode in 0..256 {
+                if self.ops.contains_key(&opcode) && self.ops[&opcode].prefix == Some(*prefix) {
+                    self.generate_op_match_arm_token_stream(file, &self.ops[&opcode]);
+                }
+            }
+            writeln!(
+                file,
+                "
+                _ => {{
+                    unreachable!();
+                }}
+                "
+            )
+            .unwrap();
+            writeln!(file, "}}").unwrap();
+            writeln!(file, "}}").unwrap();
+        }
+        writeln!(
+            file,
+            "
+            _ => {{
+                unreachable!();
+            }}
+            "
+        )
+        .unwrap();
+        writeln!(file, "}}").unwrap();
+        writeln!(file, "}}").unwrap();
 
         writeln!(file, "}}").unwrap();
         writeln!(file, "mcycles").unwrap();
@@ -140,12 +191,16 @@ impl Generator {
         let action = &op.code;
         let opcode = op.opcode;
 
+        if let Some(prefix) = op.prefix {
+            write!(file, "// {:#04X}{:02X}", prefix, op.opcode).unwrap();
+        }
+
         write!(
             file,
             "
         // {}
         // ({:o} octal) - {}t
-        {:#06x} => {{
+        {:#04X} => {{
             {}
         ",
             op.mnemonic,
@@ -208,14 +263,21 @@ impl Generator {
                 #[allow(non_snake_case)]"
                 )
                 .unwrap();
-                writeln!(
-                    file,
-                    "fn test_op_{:#04x}_{op_name}_test{idx}(){{",
-                    op.opcode
-                )
-                .unwrap();
+
+                let mut test_name = format!("test_op_{:#04X}_{op_name}_test{idx}", op.opcode);
+                if let Some(prefix) = op.prefix {
+                    test_name =
+                        format!("test_op_{prefix:#04X}{:02X}_{op_name}_test{idx}", op.opcode);
+                }
+
+                writeln!(file, "fn {test_name}(){{").unwrap();
                 writeln!(file, "let mut cpu = create_test_cpu();").unwrap();
-                writeln!(file, "cpu.mmu.write8(0x00, {:#04x});", op.opcode).unwrap();
+                if let Some(prefix) = op.prefix {
+                    writeln!(file, "cpu.mmu.write8(0x00, {:#04X});", prefix).unwrap();
+                    writeln!(file, "cpu.mmu.write8(0x01, {:#04X});", op.opcode).unwrap();
+                } else {
+                    writeln!(file, "cpu.mmu.write8(0x00, {:#04X});", op.opcode).unwrap();
+                }
                 for set in &test.set {
                     writeln!(file, "cpu.{};", set).unwrap();
                 }
