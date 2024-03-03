@@ -47,6 +47,7 @@ fn handle_action_replacements(opcode: u32, action: &String) -> String {
         .replace("$RZ", &get_register_name(encoding_params.z))
         .replace("$RRP", &get_register_pair_name(encoding_params.p))
         .replace("$ALU", &get_alu_function(encoding_params.y))
+        .replace("$ROTY", &get_rot_function_name(encoding_params.y))
         .replace("$NY", &encoding_params.y.to_string());
 
     if encoding_params.y >= 4 {
@@ -68,6 +69,7 @@ fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
         .replace("$RZ", &get_register_description(encoding_params.z))
         .replace("$RRP", &get_register_pair_description(encoding_params.p))
         .replace("$ALU", &get_alu_function_description(encoding_params.y))
+        .replace("$ROTY", &get_rot_function_description(encoding_params.y))
         .replace("$NY", &encoding_params.y.to_string());
 
     if encoding_params.y >= 4 {
@@ -119,6 +121,15 @@ fn get_conditional_call_function(idx: u8) -> String {
 
 fn get_conditional_call_function_description(idx: u8) -> String {
     get_conditional_call_function(idx).to_uppercase()
+}
+
+fn get_rot_function_name(idx: u8) -> String {
+    const FUNC: &'static [&'static str] = &["rlc", "rrc", "rl", "rr", "sla", "sra", "swap", "srl"];
+    FUNC[idx as usize].to_string()
+}
+
+fn get_rot_function_description(idx: u8) -> String {
+    get_rot_function_name(idx).to_uppercase()
 }
 
 pub(crate) struct EncodingParams {

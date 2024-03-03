@@ -207,6 +207,80 @@ impl CPU {
         self.registers.set_flag_c(ajd >= 0x60);
     }
 
+    pub fn alu_rlc(&mut self, mut val: u8) -> u8 {
+        let carry = val & 0x80;
+        val = val.rotate_left(1);
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+        val
+    }
+
+    pub fn alu_rrc(&mut self, mut val: u8) -> u8 {
+        let carry = val & 0x01;
+        val = val.rotate_right(1);
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+        val
+    }
+
+    pub fn alu_rl(&mut self, mut val: u8) -> u8 {
+        let carry = val & 0x80;
+        val <<= 1 | carry;
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+        val
+    }
+
+    pub fn alu_rr(&mut self, mut val: u8) -> u8 {
+        let carry = val & 0x01;
+        val >>= 1 | (carry << 7);
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+        val
+    }
+
+    pub fn alu_sla(&mut self, mut val: u8) -> u8 {
+        let carry = (val & 0x80) == 0x80;
+        val >>= 1;
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry);
+        val
+    }
+
+    pub fn alu_srl(&mut self, mut val: u8) -> u8 {
+        let carry = val & 0x01;
+        val >>= 1;
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(carry != 0);
+        val
+    }
+
+    pub fn alu_sra(&mut self, val: u8) -> u8 {
+        let bit7 = val & 0x80;
+        self.alu_srl(val) | bit7
+    }
+
+    pub fn alu_swap(&mut self, mut val: u8) -> u8 {
+        val = ((val & 0x0f) << 4) | ((val & 0xf0) >> 4);
+        self.registers.set_flag_z(val == 0x00);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(false);
+        self.registers.set_flag_c(false);
+        val
+    }
+
     pub fn cc_nz(&self) -> bool {
         !self.cc_z()
     }

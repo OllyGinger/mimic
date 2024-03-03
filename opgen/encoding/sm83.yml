@@ -1106,6 +1106,29 @@ CCF:
           - [cpu.registers.flag_c(), 1]
 
 # ####### 0xCB Prefixed Ops ########
+# --- Quadrant 0 ---
+# Z 0 0 C
+$ROTY $RZ:
+  prefix: 0xCB
+  encoding: (x == 0 && y >= 0 && y <= 7 && z != 6)
+  mcycle_duration: 2
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    let val = self.alu_$ROTY(self.registers.$RZ());
+    self.registers.set_$RZ(val);
+
+# Z 0 0 C
+$ROTY (HL):
+  prefix: 0xCB
+  encoding: (x == 0 && y >= 0 && y <= 7 && z == 6)
+  mcycle_duration: 4
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    let val = self.alu_$ROTY(self.mmu.read8(self.registers.hl()));
+    self.mmu.write8(self.registers.hl(), val);
+
 # --- Quadrant 1 ---
 # Z 0 1 -
 BIT $NY, $RZ:

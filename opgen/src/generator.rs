@@ -47,7 +47,6 @@ impl Generator {
             }
         }
 
-        let mut xx = 0;
         for opcode in 0..255 {
             let encoding_params: op::EncodingParams = opcode.into();
             let eval_context = context_map! {
@@ -87,8 +86,6 @@ impl Generator {
                 );
             }
         }
-
-        println!("Found {} opcodes", self.ops.len());
     }
 
     fn generate_file(&self, file: &mut File) {
@@ -107,7 +104,7 @@ impl Generator {
             /// Each opcode is calculated as a machine-cycle (time it takes to complete a sub-operation, eg a fetch)
             /// Returns: Duration of the tick in T-States. Machine cycles are t states * 4. 
             pub fn tick(&mut self) -> u32 {{
-                let mut next_opcode = self.read_next_opcode();
+                let next_opcode = self.read_next_opcode();
                 let mcycles;
                 match next_opcode.prefix {{"
         )
