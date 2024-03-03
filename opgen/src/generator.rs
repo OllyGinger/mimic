@@ -223,7 +223,6 @@ impl Generator {
                 
                 fn create_test_cpu() -> CPU {{
                     let mut memory = test_memory::TestMemory::new();
-                    memory.write8(0x00, 0x74); // Write the opcode into test memory
                     let mut mmu: MMU = MMU::new();
                     mmu.add_interface([0x0000..0xFFFF], Rc::new(RefCell::new(memory)));
                     CPU::new(mmu)
