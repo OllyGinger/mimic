@@ -1105,6 +1105,53 @@ CCF:
           - [cpu.registers.flag_z(), 0]
           - [cpu.registers.flag_c(), 1]
 
+# --- Quadrant 3 ---
+# - - - -
+RET $CC:
+  encoding: (x == 3 && y >= 0 && y <= 3 && z == 0)
+  conditional_duration: true
+  action:
+    self.registers.inc_pc(1);
+    if self.cc_$CC() {
+      self.registers.set_pc(self.mmu.read16(self.registers.sp()));
+      self.registers.set_sp(self.registers.sp().wrapping_add(2));
+      mcycles = 5;
+    } else {
+      mcycles = 2;
+    }
+
+# - - - -
+JP $CC, n16:
+  encoding: (x == 3 && y >= 0 && y <= 3 && z == 2)
+  conditional_duration: true
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    self.registers.inc_pc(2);
+    if self.cc_$CC() {
+      self.registers.set_pc(imm);
+      mcycles = 4;
+    } else {
+      mcycles = 3;
+    }
+
+# - - - -
+CALL $CC, n16:
+  encoding: (x == 3 && y >= 0 && y <= 3 && z == 4)
+  conditional_duration: true
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    self.registers.inc_pc(2);
+    if self.cc_$CC() {
+      self.mmu.write16(self.registers.sp().wrapping_sub(2), self.registers.pc());
+      self.registers.set_pc(imm);
+      self.registers.set_sp(self.registers.sp().wrapping_sub(2));
+      mcycles = 4;
+    } else {
+      mcycles = 3;
+    }
+
 # ####### 0xCB Prefixed Ops ########
 # --- Quadrant 0 ---
 # Z 0 0 C
