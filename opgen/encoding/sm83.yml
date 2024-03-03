@@ -35,24 +35,24 @@ LD $RY, $RZ:
     self.registers.set_$RY(self.registers.$RZ()); 
   tests:
     - set:
-        - registers.set_$RZ(0x66)
+        - cpu.registers.set_$RZ(0x66)
       expect:
-        - [registers.$RY(), 0x66]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0x66]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set: # Check flags aren't messed with
-        - registers.set_$RZ(0x66)
-        - registers.enable_all_flags()
+        - cpu.registers.set_$RZ(0x66)
+        - cpu.registers.enable_all_flags()
       expect:
-        - [registers.$RY(), 0x66]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0x66]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01]
 
 # Flags: - - - -
 LD (HL), $RZ:
@@ -63,26 +63,26 @@ LD (HL), $RZ:
     self.mmu.write8(self.registers.hl(), self.registers.$RZ()); 
   tests:
     - set:
-        - registers.set_$RZ(0xff)
-        - registers.set_hl(0xffff)
+        - cpu.registers.set_$RZ(0xff)
+        - cpu.registers.set_hl(0xffff)
       expect:
-        - [mmu.read8(0xffff), 0xff]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.mmu.read8(0xffff), 0xff]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set: # Check flags aren't messed with
-        - registers.set_$RZ(0xff)
-        - registers.set_hl(0xffff)
-        - registers.enable_all_flags()
+        - cpu.registers.set_$RZ(0xff)
+        - cpu.registers.set_hl(0xffff)
+        - cpu.registers.enable_all_flags()
       expect:
-        - [mmu.read8(0xffff), 0xff]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01]
+        - [cpu.mmu.read8(0xffff), 0xff]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01]
 
 # Flags: - - - -
 LD $RY, (HL):
@@ -93,26 +93,26 @@ LD $RY, (HL):
     self.registers.set_$RY(self.mmu.read8(self.registers.hl()));
   tests:
     - set:
-        - mmu.write8(0xffff, 0xAB)
-        - registers.set_hl(0xffff)
+        - cpu.mmu.write8(0xffff, 0xAB)
+        - cpu.registers.set_hl(0xffff)
       expect:
-        - [registers.$RY(), 0xAB]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0xAB]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set: # Check flags aren't messed with
-        - mmu.write8(0xffff, 0xAB)
-        - registers.set_hl(0xffff)
-        - registers.enable_all_flags()
+        - cpu.mmu.write8(0xffff, 0xAB)
+        - cpu.registers.set_hl(0xffff)
+        - cpu.registers.enable_all_flags()
       expect:
-        - [registers.$RY(), 0xAB]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0xAB]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01]
 
 # --- Quadrant 2 ---
 # ADD Flags: Z 0 H C
@@ -141,15 +141,15 @@ NOP:
     self.registers.inc_pc(1);
   tests:
     - expect:
-        - [registers.pc(), 0x01]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags()
+        - cpu.registers.enable_all_flags()
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01] 
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01] 
 
 # 8 bit inc/dec
 # Flags: Z 0 H -
@@ -162,32 +162,32 @@ INC $RY:
     self.registers.set_flags(flags);
   tests:
     - set:
-        - registers.set_$RY(0xFE)
+        - cpu.registers.set_$RY(0xFE)
       expect:
-        - [registers.$RY(), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RY(0xFF)
+        - cpu.registers.set_$RY(0xFF)
       expect:
-        - [registers.$RY(), 0x00]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0x00]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RY(0xEF)
+        - cpu.registers.set_$RY(0xEF)
       expect:
-        - [registers.$RY(), 0xF0]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0xF0]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
 
 # Flags: Z 0 H -
 INC (HL):
@@ -200,27 +200,27 @@ INC (HL):
     self.mmu.write8(self.registers.hl(), val); 
   tests:
     - set:
-        - mmu.write8(0xff00, 0xDE)
-        - registers.set_hl(0xff00)
+        - cpu.mmu.write8(0xff00, 0xDE)
+        - cpu.registers.set_hl(0xff00)
       expect:
-        - [registers.hl(), 0xff00]
-        - [mmu.read8(0xff00), 0xDF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0xff00]
+        - [cpu.mmu.read8(0xff00), 0xDF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - mmu.write8(0xff00, 0xEF)
-        - registers.set_hl(0xff00)
+        - cpu.mmu.write8(0xff00, 0xEF)
+        - cpu.registers.set_hl(0xff00)
       expect:
-        - [registers.hl(), 0xff00]
-        - [mmu.read8(0xff00), 0xF0]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0xff00]
+        - [cpu.mmu.read8(0xff00), 0xF0]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
 
 # Flags: Z 1 H -
 DEC $RY:
@@ -232,32 +232,32 @@ DEC $RY:
     self.registers.set_flags(flags);
   tests:
     - set:
-        - registers.set_$RY(0xFF)
+        - cpu.registers.set_$RY(0xFF)
       expect:
-        - [registers.$RY(), 0xFE]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0xFE]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RY(0x00)
+        - cpu.registers.set_$RY(0x00)
       expect:
-        - [registers.$RY(), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RY(0x01)
+        - cpu.registers.set_$RY(0x01)
       expect:
-        - [registers.$RY(), 0x00]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RY(), 0x00]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
 # Flags: Z 1 H -
 DEC (HL):
   encoding: (x == 0 && y == 6 && z == 5)
@@ -269,38 +269,38 @@ DEC (HL):
     self.mmu.write8(self.registers.hl(), val); 
   tests:
     - set:
-        - mmu.write8(0xff00, 0xDF)
-        - registers.set_hl(0xff00)
+        - cpu.mmu.write8(0xff00, 0xDF)
+        - cpu.registers.set_hl(0xff00)
       expect:
-        - [registers.hl(), 0xff00]
-        - [mmu.read8(0xff00), 0xDE]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0xff00]
+        - [cpu.mmu.read8(0xff00), 0xDE]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - mmu.write8(0xff00, 0xF0)
-        - registers.set_hl(0xff00)
+        - cpu.mmu.write8(0xff00, 0xF0)
+        - cpu.registers.set_hl(0xff00)
       expect:
-        - [registers.hl(), 0xff00]
-        - [mmu.read8(0xff00), 0xEF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0xff00]
+        - [cpu.mmu.read8(0xff00), 0xEF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - mmu.write8(0xff00, 0x01)
-        - registers.set_hl(0xff00)
+        - cpu.mmu.write8(0xff00, 0x01)
+        - cpu.registers.set_hl(0xff00)
       expect:
-        - [registers.hl(), 0xff00]
-        - [mmu.read8(0xff00), 0x00]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0xff00]
+        - [cpu.mmu.read8(0xff00), 0x00]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
 # 16 bit inc/dec
 # Flags: - - - -
 INC $RRP:
@@ -311,24 +311,24 @@ INC $RRP:
     self.registers.set_$RRP(self.registers.$RRP().wrapping_add(1));
   tests:
     - set:
-        - registers.set_$RRP(0xABCD)
+        - cpu.registers.set_$RRP(0xABCD)
       expect:
-        - [registers.$RRP(), 0xABCE]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RRP(), 0xABCE]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RRP(0xABCD)
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.set_$RRP(0xABCD)
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.$RRP(), 0xABCE]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RRP(), 0xABCE]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01]
 # Flags: - - - -
 DEC $RRP:
   encoding: (x == 0 && z == 3 && q == 1)
@@ -338,24 +338,24 @@ DEC $RRP:
     self.registers.set_$RRP(self.registers.$RRP().wrapping_sub(1));
   tests:
     - set:
-        - registers.set_$RRP(0xABCD)
+        - cpu.registers.set_$RRP(0xABCD)
       expect:
-        - [registers.$RRP(), 0xABCC]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RRP(), 0xABCC]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RRP(0xABCD)
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.set_$RRP(0xABCD)
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.$RRP(), 0xABCC]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.$RRP(), 0xABCC]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01]
 
 # 16 bit immediate load
 # Flags: - 0 H C
@@ -367,35 +367,35 @@ ADD HL, $RRP:
     self.alu_add_hl(self.registers.$RRP());
   tests:
     - set:
-        - registers.set_$RRP(0x1111)
-        - registers.set_hl(0xABCD)
+        - cpu.registers.set_$RRP(0x1111)
+        - cpu.registers.set_hl(0xABCD)
       expect:
-        - [registers.hl(), 0xBCDE]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0xBCDE]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RRP(0x0001)
-        - registers.set_hl(0x0FFF)
+        - cpu.registers.set_$RRP(0x0001)
+        - cpu.registers.set_hl(0x0FFF)
       expect:
-        - [registers.hl(), 0x1000]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0x1000]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.set_$RRP(0x0001)
-        - registers.set_hl(0xFFFF)
+        - cpu.registers.set_$RRP(0x0001)
+        - cpu.registers.set_hl(0xFFFF)
       expect:
-        - [registers.hl(), 0x0000]
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0x0000]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
+        - [cpu.registers.pc(), 0x01]
 
 # Flags: - 0 H C
 ADD HL, HL:
@@ -406,14 +406,14 @@ ADD HL, HL:
     self.alu_add_hl(self.registers.hl());
   tests:
     - set:
-        - registers.set_hl(0x1234)
+        - cpu.registers.set_hl(0x1234)
       expect:
-        - [registers.hl(), 0x2468]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.hl(), 0x2468]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
 
 # Flags: - - - -
 LD $RRP, n16:
@@ -426,21 +426,21 @@ LD $RRP, n16:
     self.registers.set_$RRP(imm);
   tests:
     - set:
-        - mmu.write16(0x0001, 0x1234)
+        - cpu.mmu.write16(0x0001, 0x1234)
       expect:
-        - [registers.$RRP(), 0x1234]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x03]
+        - [cpu.registers.$RRP(), 0x1234]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x03]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
         
 # 8 bit Load literal
 # Flags: - - - -
@@ -454,21 +454,21 @@ LD $RY, n8:
     self.registers.set_$RY(imm);
   tests:
     - set:
-        - mmu.write8(0x01, 0xAB)
+        - cpu.mmu.write8(0x01, 0xAB)
       expect:
-        - [registers.$RY(), 0xAB]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x02]
+        - [cpu.registers.$RY(), 0xAB]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x02]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
         
 # Flags: - - - -
 LD (HL), n8:
@@ -481,22 +481,22 @@ LD (HL), n8:
     self.mmu.write8(self.registers.hl(), imm);
   tests:
     - set:
-        - registers.set_hl(0x0F00)
-        - mmu.write8(0x01, 0xFF)
+        - cpu.registers.set_hl(0x0F00)
+        - cpu.mmu.write8(0x01, 0xFF)
       expect:
-        - [mmu.read8(0x0F00), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x02]
+        - [cpu.mmu.read8(0x0F00), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x02]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # 16 bit indirect loads
 # Flags: - - - -
@@ -508,22 +508,22 @@ LD (BC), A:
     self.mmu.write8(self.registers.bc(), self.registers.a());
   tests:
     - set:
-        - registers.set_bc(0x0F00)
-        - registers.set_a(0xFF)
+        - cpu.registers.set_bc(0x0F00)
+        - cpu.registers.set_a(0xFF)
       expect:
-        - [mmu.read8(0x0F00), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.mmu.read8(0x0F00), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # Flags: - - - -
 LD A, (BC):
@@ -534,22 +534,22 @@ LD A, (BC):
     self.registers.set_a(self.mmu.read8(self.registers.bc()));
   tests:
     - set:
-        - registers.set_bc(0x0F00)
-        - mmu.write8(0x0F00, 0xFF)
+        - cpu.registers.set_bc(0x0F00)
+        - cpu.mmu.write8(0x0F00, 0xFF)
       expect:
-        - [registers.a(), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.a(), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # Flags: - - - -
 LD (DE), A:
@@ -560,22 +560,22 @@ LD (DE), A:
     self.mmu.write8(self.registers.de(), self.registers.a());
   tests:
     - set:
-        - registers.set_de(0x0F00)
-        - registers.set_a(0xFF)
+        - cpu.registers.set_de(0x0F00)
+        - cpu.registers.set_a(0xFF)
       expect:
-        - [mmu.read8(0x0F00), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.mmu.read8(0x0F00), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # Flags: - - - -
 LD A, (DE):
@@ -586,22 +586,22 @@ LD A, (DE):
     self.registers.set_a(self.mmu.read8(self.registers.de()));
   tests:
     - set:
-        - registers.set_de(0x0F00)
-        - mmu.write8(0x0F00, 0xFF)
+        - cpu.registers.set_de(0x0F00)
+        - cpu.mmu.write8(0x0F00, 0xFF)
       expect:
-        - [registers.a(), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.a(), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # Flags: - - - -
 LD (HL+), A:
@@ -613,23 +613,23 @@ LD (HL+), A:
     self.registers.set_hl(self.registers.hl().wrapping_add(1));
   tests:
     - set:
-        - registers.set_hl(0x0F00)
-        - registers.set_a(0xFF)
+        - cpu.registers.set_hl(0x0F00)
+        - cpu.registers.set_a(0xFF)
       expect:
-        - [mmu.read8(0x0F00), 0xFF]
-        - [registers.hl(), 0x0F01]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.mmu.read8(0x0F00), 0xFF]
+        - [cpu.registers.hl(), 0x0F01]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 # Flags: - - - -
 LD (HL-), A:
   encoding: (x == 0 && y == 6 && z == 2)
@@ -640,23 +640,23 @@ LD (HL-), A:
     self.registers.set_hl(self.registers.hl().wrapping_sub(1));
   tests:
     - set:
-        - registers.set_hl(0x0F00)
-        - registers.set_a(0xFF)
+        - cpu.registers.set_hl(0x0F00)
+        - cpu.registers.set_a(0xFF)
       expect:
-        - [mmu.read8(0x0F00), 0xFF]
-        - [registers.hl(), 0x0EFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.mmu.read8(0x0F00), 0xFF]
+        - [cpu.registers.hl(), 0x0EFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 # Flags: - - - -
 LD A, (HL+):
   encoding: (x == 0 && y == 5 && z == 2)
@@ -667,23 +667,23 @@ LD A, (HL+):
     self.registers.set_hl(self.registers.hl().wrapping_add(1));
   tests:
     - set:
-        - registers.set_hl(0x0F00)
-        - mmu.write8(0x0F00, 0xFF)
+        - cpu.registers.set_hl(0x0F00)
+        - cpu.mmu.write8(0x0F00, 0xFF)
       expect:
-        - [registers.a(), 0xFF]
-        - [registers.hl(), 0x0F01]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.a(), 0xFF]
+        - [cpu.registers.hl(), 0x0F01]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 # Flags: - - - -
 LD A, (HL-):
   encoding: (x == 0 && y == 7 && z == 2)
@@ -694,23 +694,23 @@ LD A, (HL-):
     self.registers.set_hl(self.registers.hl().wrapping_sub(1));
   tests:
     - set:
-        - registers.set_hl(0x0F00)
-        - mmu.write8(0x0F00, 0xFF)
+        - cpu.registers.set_hl(0x0F00)
+        - cpu.mmu.write8(0x0F00, 0xFF)
       expect:
-        - [registers.a(), 0xFF]
-        - [registers.hl(), 0x0EFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
-        - [registers.pc(), 0x01]
+        - [cpu.registers.a(), 0xFF]
+        - [cpu.registers.hl(), 0x0EFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x01]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # 0 0 0 C
 RLCA:
@@ -721,29 +721,29 @@ RLCA:
     self.alu_rlca();
   tests:
     - set:
-        - registers.set_a(0x01)
+        - cpu.registers.set_a(0x01)
       expect:
-        - [registers.a(), 0x02]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]     
+        - [cpu.registers.a(), 0x02]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]     
     - set:
-        - registers.set_a(0x7f)
+        - cpu.registers.set_a(0x7f)
       expect:
-        - [registers.a(), 0xFE]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]        
+        - [cpu.registers.a(), 0xFE]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]        
     - set:
-        - registers.set_a(0xFE)
+        - cpu.registers.set_a(0xFE)
       expect:
-        - [registers.a(), 0xFD]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]  
+        - [cpu.registers.a(), 0xFD]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]  
 
 # 0 0 0 C
 RLA:
@@ -754,56 +754,56 @@ RLA:
     self.alu_rla();
   tests:
     - set:
-        - registers.set_a(0x01)
+        - cpu.registers.set_a(0x01)
       expect:
-        - [registers.a(), 0x02]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.a(), 0x02]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
     - set:
-        - registers.set_a(0x01)
-        - registers.set_flag_c(true)
+        - cpu.registers.set_a(0x01)
+        - cpu.registers.set_flag_c(true)
       expect:
-        - [registers.a(), 0x03]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.a(), 0x03]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
     - set:
-        - registers.set_a(0x7f)
+        - cpu.registers.set_a(0x7f)
       expect:
-        - [registers.a(), 0xFE]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.a(), 0xFE]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
     - set:
-        - registers.set_a(0x7f)
-        - registers.set_flag_c(true)
+        - cpu.registers.set_a(0x7f)
+        - cpu.registers.set_flag_c(true)
       expect:
-        - [registers.a(), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]      
+        - [cpu.registers.a(), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]      
     - set:
-        - registers.set_a(0xFE)
+        - cpu.registers.set_a(0xFE)
       expect:
-        - [registers.a(), 0xFC]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.a(), 0xFC]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]
     - set:
-        - registers.set_a(0xFE)
-        - registers.set_flag_c(true)
+        - cpu.registers.set_a(0xFE)
+        - cpu.registers.set_flag_c(true)
       expect:
-        - [registers.a(), 0xFD]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.a(), 0xFD]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]
 
 # 0 0 0 C
 RRCA:
@@ -814,29 +814,29 @@ RRCA:
     self.alu_rrca();
   tests:
     - set:
-        - registers.set_a(0x01)
+        - cpu.registers.set_a(0x01)
       expect:
-        - [registers.a(), 0x80]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]     
+        - [cpu.registers.a(), 0x80]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]     
     - set:
-        - registers.set_a(0x7f)
+        - cpu.registers.set_a(0x7f)
       expect:
-        - [registers.a(), 0xBF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]        
+        - [cpu.registers.a(), 0xBF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]        
     - set:
-        - registers.set_a(0xFE)
+        - cpu.registers.set_a(0xFE)
       expect:
-        - [registers.a(), 0x7F]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]  
+        - [cpu.registers.a(), 0x7F]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]  
 
 # 0 0 0 C
 RRA:
@@ -847,56 +847,56 @@ RRA:
     self.alu_rra();
   tests:
     - set:
-        - registers.set_a(0x01)
+        - cpu.registers.set_a(0x01)
       expect:
-        - [registers.a(), 0x00]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.a(), 0x00]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]
     - set:
-        - registers.set_a(0x01)
-        - registers.set_flag_c(true)
+        - cpu.registers.set_a(0x01)
+        - cpu.registers.set_flag_c(true)
       expect:
-        - [registers.a(), 0x80]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.a(), 0x80]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]
     - set:
-        - registers.set_a(0x7f)
+        - cpu.registers.set_a(0x7f)
       expect:
-        - [registers.a(), 0x3F]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.a(), 0x3F]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]
     - set:
-        - registers.set_a(0x7f)
-        - registers.set_flag_c(true)
+        - cpu.registers.set_a(0x7f)
+        - cpu.registers.set_flag_c(true)
       expect:
-        - [registers.a(), 0xBF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 1]      
+        - [cpu.registers.a(), 0xBF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 1]      
     - set:
-        - registers.set_a(0xFE)
+        - cpu.registers.set_a(0xFE)
       expect:
-        - [registers.a(), 0x7F]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.a(), 0x7F]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
     - set:
-        - registers.set_a(0xFE)
-        - registers.set_flag_c(true)
+        - cpu.registers.set_a(0xFE)
+        - cpu.registers.set_flag_c(true)
       expect:
-        - [registers.a(), 0xFF]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.a(), 0xFF]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
 
 # 0 0 0 C
 LD (n16), SP:
@@ -909,21 +909,21 @@ LD (n16), SP:
     self.mmu.write16(imm, self.registers.sp());
   tests:
     - set:
-        - mmu.write16(0x1, 0xDEAF)
-        - registers.set_sp(0x1234)
+        - cpu.mmu.write16(0x1, 0xDEAF)
+        - cpu.registers.set_sp(0x1234)
       expect:
-        - [mmu.read16(0xDEAF), 0x1234]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.mmu.read16(0xDEAF), 0x1234]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
     - set:
-        - registers.enable_all_flags() # Check flags aren't touched
+        - cpu.registers.enable_all_flags() # Check flags aren't touched
       expect:
-        - [registers.flag_z(), 1]
-        - [registers.flag_n(), 1]
-        - [registers.flag_h(), 1]
-        - [registers.flag_c(), 1]
+        - [cpu.registers.flag_z(), 1]
+        - [cpu.registers.flag_n(), 1]
+        - [cpu.registers.flag_h(), 1]
+        - [cpu.registers.flag_c(), 1]
 
 # 0 0 0 C
 JR n8:
@@ -936,21 +936,21 @@ JR n8:
     self.registers.set_pc(self.registers.pc().wrapping_add(imm as u16));
   tests:
     - set:
-        - mmu.write8(0x0001, 0x12)
+        - cpu.mmu.write8(0x0001, 0x12)
       expect:
-        - [registers.pc(), 0x14]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x14]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
     - set:
-        - mmu.write8(0x0001, 0xFF)
+        - cpu.mmu.write8(0x0001, 0xFF)
       expect:
-        - [registers.pc(), 0x0001]
-        - [registers.flag_z(), 0]
-        - [registers.flag_n(), 0]
-        - [registers.flag_h(), 0]
-        - [registers.flag_c(), 0]
+        - [cpu.registers.pc(), 0x0001]
+        - [cpu.registers.flag_z(), 0]
+        - [cpu.registers.flag_n(), 0]
+        - [cpu.registers.flag_h(), 0]
+        - [cpu.registers.flag_c(), 0]
 
 # 0 0 0 C
 JR $CC-4, n8:
@@ -969,22 +969,22 @@ JR $CC-4, n8:
   # TODO:
   #tests:
   #  - set:
-  #      - mmu.write8(0x0001, 0x12)
+  #      - cpu.mmu.write8(0x0001, 0x12)
   #    expect: # False condition
-  #      - [registers.pc(), 0x2]
-  #      - [registers.flag_z(), 0]
-  #      - [registers.flag_n(), 0]
-  #      - [registers.flag_h(), 0]
-  #      - [registers.flag_c(), 0]
+  #      - [cpu.registers.pc(), 0x2]
+  #      - [cpu.registers.flag_z(), 0]
+  #      - [cpu.registers.flag_n(), 0]
+  #      - [cpu.registers.flag_h(), 0]
+  #      - [cpu.registers.flag_c(), 0]
   #  - set:
-  #      - mmu.write8(0x0001, 0x12)
-  #      - registers.set_flag_$CC-4(true);
+  #      - cpu.mmu.write8(0x0001, 0x12)
+  #      - cpu.registers.set_flag_$CC-4(true);
   #    expect:
-  #      - [registers.pc(), 0x0001]
-  #      - [registers.flag_z(), 0]
-  #      - [registers.flag_n(), 0]
-  #      - [registers.flag_h(), 0]
-  #      - [registers.flag_c(), 0]
+  #      - [cpu.registers.pc(), 0x0001]
+  #      - [cpu.registers.flag_z(), 0]
+  #      - [cpu.registers.flag_n(), 0]
+  #      - [cpu.registers.flag_h(), 0]
+  #      - [cpu.registers.flag_c(), 0]
 
 # Z - 0 C
 DAA:
@@ -996,29 +996,29 @@ DAA:
   tests:
       # Tests verify operation table for DAA definition in http://www.z80.info/zip/z80cpu_um.pdf
       - set: # Row 0
-          - registers.set_flag_c(false)
-          - registers.set_flag_h(false)
-          - registers.set_a(0x00)
+          - cpu.registers.set_flag_c(false)
+          - cpu.registers.set_flag_h(false)
+          - cpu.registers.set_a(0x00)
         expect:
-          - [registers.pc(), 0x1]
-          - [registers.flag_c(), 0]
-          - [registers.a(), 0x00]
+          - [cpu.registers.pc(), 0x1]
+          - [cpu.registers.flag_c(), 0]
+          - [cpu.registers.a(), 0x00]
       - set: # Row 1
-          - registers.set_flag_c(false)
-          - registers.set_flag_h(false)
-          - registers.set_a(0x0F)
+          - cpu.registers.set_flag_c(false)
+          - cpu.registers.set_flag_h(false)
+          - cpu.registers.set_a(0x0F)
         expect:
-          - [registers.pc(), 0x1]
-          - [registers.flag_c(), 0]
-          - [registers.a(), 0x15]
+          - [cpu.registers.pc(), 0x1]
+          - [cpu.registers.flag_c(), 0]
+          - [cpu.registers.a(), 0x15]
       - set: # Row 2
-          - registers.set_flag_c(false)
-          - registers.set_flag_h(true)
-          - registers.set_a(0x00)
+          - cpu.registers.set_flag_c(false)
+          - cpu.registers.set_flag_h(true)
+          - cpu.registers.set_a(0x00)
         expect:
-          - [registers.pc(), 0x1]
-          - [registers.flag_c(), 0]
-          - [registers.a(), 0x06]
+          - [cpu.registers.pc(), 0x1]
+          - [cpu.registers.flag_c(), 0]
+          - [cpu.registers.a(), 0x06]
     # TODO: Complete these
 
 # - 1 1 -
@@ -1032,30 +1032,30 @@ CPL:
     self.registers.set_flag_h(true);
   tests:
       - set:
-          - registers.set_a(0x00)
+          - cpu.registers.set_a(0x00)
         expect:
-          - [registers.pc(), 0x1]
-          - [registers.a(), 0xFF]
-          - [registers.flag_n(), 1]
-          - [registers.flag_h(), 1]
-          - [registers.flag_c(), 0]
-          - [registers.flag_z(), 0]
+          - [cpu.registers.pc(), 0x1]
+          - [cpu.registers.a(), 0xFF]
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
+          - [cpu.registers.flag_z(), 0]
       - set:
-          - registers.set_a(0xFF)
+          - cpu.registers.set_a(0xFF)
         expect:
-          - [registers.pc(), 0x1]
-          - [registers.a(), 0x00]
-          - [registers.flag_n(), 1]
-          - [registers.flag_h(), 1]
-          - [registers.flag_c(), 0]
-          - [registers.flag_z(), 0]
+          - [cpu.registers.pc(), 0x1]
+          - [cpu.registers.a(), 0x00]
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
+          - [cpu.registers.flag_z(), 0]
       - set:
-          - registers.enable_all_flags()
+          - cpu.registers.enable_all_flags()
         expect:
-          - [registers.flag_n(), 1]
-          - [registers.flag_h(), 1]
-          - [registers.flag_z(), 1]
-          - [registers.flag_c(), 1]
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 1]
 
 # - 0 0 1
 SCF:
@@ -1068,18 +1068,18 @@ SCF:
     self.registers.set_flag_h(false);
   tests:
       - set:
-          - registers.enable_all_flags()
+          - cpu.registers.enable_all_flags()
         expect:
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 0]
-          - [registers.flag_z(), 1]
-          - [registers.flag_c(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 0]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 1]
       - set:
         expect:
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 0]
-          - [registers.flag_z(), 0]
-          - [registers.flag_c(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 0]
+          - [cpu.registers.flag_z(), 0]
+          - [cpu.registers.flag_c(), 1]
 
 # - 0 0 C
 CCF:
@@ -1092,18 +1092,18 @@ CCF:
     self.registers.set_flag_h(false);
   tests:
       - set:
-          - registers.enable_all_flags()
+          - cpu.registers.enable_all_flags()
         expect:
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 0]
-          - [registers.flag_z(), 1]
-          - [registers.flag_c(), 0]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 0]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 0]
       - set:
         expect:
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 0]
-          - [registers.flag_z(), 0]
-          - [registers.flag_c(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 0]
+          - [cpu.registers.flag_z(), 0]
+          - [cpu.registers.flag_c(), 1]
 
 # ####### 0xCB Prefixed Ops ########
 # --- Quadrant 1 ---
@@ -1120,28 +1120,172 @@ BIT $NY, $RZ:
     self.registers.set_flag_z(self.registers.$RZ() & (1 << $NY) == 0);
   tests:
       - set:
-          - registers.enable_all_flags()
+          - cpu.registers.enable_all_flags()
         expect:
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
       - set:
-          - registers.set_$RZ(1 << $NY)
+          - cpu.registers.set_$RZ(1 << $NY)
         expect:
-          - [registers.flag_z(), 0]
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 1]
-          - [registers.flag_c(), 0]
+          - [cpu.registers.flag_z(), 0]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
       - set:
-          - registers.set_$RZ(0xFF & !(1 << $NY))
+          - cpu.registers.set_$RZ(0xFF & !(1 << $NY))
         expect:
-          - [registers.flag_z(), 1]
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 1]
-          - [registers.flag_c(), 0]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
       - set:
-          - registers.set_$RZ(0)
+          - cpu.registers.set_$RZ(0)
         expect:
-          - [registers.flag_z(), 1]
-          - [registers.flag_n(), 0]
-          - [registers.flag_h(), 1]
-          - [registers.flag_c(), 0]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
+
+# Z 0 1 -
+BIT $NY, (HL):
+  prefix: 0xCB
+  encoding: (x == 1 && y >= 0 && y <= 7 && z == 6)  
+  mcycle_duration: 3
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    self.registers.set_flag_h(true);
+    self.registers.set_flag_n(false);
+    self.registers.set_flag_z(self.mmu.read8(self.registers.hl()) & (1 << $NY) == 0);
+  tests:
+      - set:
+          - cpu.registers.enable_all_flags()
+        expect:
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+      - set:
+          - cpu.mmu.write8(0xffff, 1 << $NY)
+          - cpu.registers.set_hl(0xffff)
+        expect:
+          - [cpu.registers.flag_z(), 0]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
+      - set:
+          - cpu.mmu.write8(0xffff, 0xFF & !(1 << $NY))
+          - cpu.registers.set_hl(0xffff)
+        expect:
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
+      - set:
+          - cpu.mmu.write8(0xffff, 0)
+          - cpu.registers.set_hl(0xffff)
+        expect:
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_n(), 0]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_c(), 0]
+
+# --- Quadrant 2 ---
+# - - - -
+RES $NY, $RZ:
+  prefix: 0xCB
+  encoding: (x == 2 && y >= 0 && y <= 7 && z != 6)  
+  mcycle_duration: 2
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    self.registers.set_$RZ(self.registers.$RZ() & !(1 << $NY));
+  tests:
+      - set:
+          - cpu.registers.enable_all_flags()
+        expect:
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 1]
+      - set:
+          - cpu.registers.set_$RZ(0)
+        expect:
+          - [cpu.registers.$RZ(), 0]
+      - set:
+          - cpu.registers.set_$RZ(1 << $NY)
+        expect:
+          - [cpu.registers.$RZ(), 0]
+
+# - - - -
+RES $NY, (HL):
+  prefix: 0xCB
+  encoding: (x == 2 && y >= 0 && y <= 7 && z == 6)  
+  mcycle_duration: 4
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()) & !(1 << $NY));
+  tests:
+      - set:
+          - cpu.registers.enable_all_flags()
+        expect:
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 1]
+      - set:
+          - cpu.registers.set_hl(0xff)
+          - cpu.mmu.write8(0xff, 0)
+        expect:
+          - [cpu.mmu.read8(0xff), 0]
+      - set:
+          - cpu.registers.set_hl(0xff)
+          - cpu.mmu.write8(0xff, 1 << $NY)
+        expect:
+          - [cpu.mmu.read8(0xff), 0]
+
+# --- Quadrant 3 ---
+# - - - -
+SET $NY, $RZ:
+  prefix: 0xCB
+  encoding: (x == 3 && y >= 0 && y <= 7 && z != 6)  
+  mcycle_duration: 2
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    self.registers.set_$RZ(self.registers.$RZ() | (1 << $NY));
+  tests:
+      - set:
+          - cpu.registers.enable_all_flags()
+        expect:
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 1]
+      - set:
+          - cpu.registers.set_$RZ(0)
+        expect:
+          - [(cpu.registers.$RZ() & (1 << $NY)) >> $NY, 1]
+
+# - - - -
+SET $NY, (HL):
+  prefix: 0xCB
+  encoding: (x == 3 && y >= 0 && y <= 7 && z == 6)  
+  mcycle_duration: 4
+  action:
+    # Prefix has already been skipped
+    self.registers.inc_pc(1);
+    self.mmu.write8(self.registers.hl(), self.mmu.read8(self.registers.hl()) | (1 << $NY));
+  tests:
+      - set:
+          - cpu.registers.enable_all_flags()
+        expect:
+          - [cpu.registers.flag_n(), 1]
+          - [cpu.registers.flag_h(), 1]
+          - [cpu.registers.flag_z(), 1]
+          - [cpu.registers.flag_c(), 1]
+      - set:
+          - cpu.registers.set_hl(0xff)
+          - cpu.mmu.write8(0xff, 0)
+        expect:
+          - [(cpu.mmu.read8(0xff) & (1 << $NY)) >> $NY, 1]
+    

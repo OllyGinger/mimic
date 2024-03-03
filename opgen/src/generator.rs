@@ -7,14 +7,14 @@ use std::{io::Write, path::PathBuf};
 
 pub struct Generator {
     encodings: HashMap<String, EncodingPattern>,
-    ops: BTreeMap<u32, Op>,
+    ops: BTreeMap<(Option<u8>, u32), Op>,
     prefixes: HashSet<u8>,
 }
 
 pub fn new() -> Generator {
     Generator {
         encodings: HashMap::<String, EncodingPattern>::new(),
-        ops: BTreeMap::<u32, Op>::new(),
+        ops: BTreeMap::<(Option<u8>, u32), Op>::new(),
         prefixes: HashSet::<u8>::new(),
     }
 }
@@ -47,21 +47,20 @@ impl Generator {
             }
         }
 
+        let mut xx = 0;
         for opcode in 0..255 {
             let encoding_params: op::EncodingParams = opcode.into();
+            let eval_context = context_map! {
+                "x" => Value::Int(encoding_params.x as i64),
+                "y" => Value::Int(encoding_params.y as i64),
+                "z" => Value::Int(encoding_params.z as i64),
+                "p" => Value::Int(encoding_params.p as i64),
+                "q" => Value::Int(encoding_params.q as i64)
+            }
+            .unwrap();
 
             // Loop through all of our opcode encodings to try and find one that matches
-            let mut any_found = false;
             for op_encoding in &self.encodings {
-                let eval_context = context_map! {
-                    "x" => Value::Int(encoding_params.x as i64),
-                    "y" => Value::Int(encoding_params.y as i64),
-                    "z" => Value::Int(encoding_params.z as i64),
-                    "p" => Value::Int(encoding_params.p as i64),
-                    "q" => Value::Int(encoding_params.q as i64)
-                }
-                .unwrap();
-
                 // Check if this encoding matches, otherwise skip
                 match &op_encoding.1.compiled_encoding {
                     Some(eval) => match eval.eval_with_context(&eval_context) {
@@ -69,11 +68,6 @@ impl Generator {
                             if result != Value::from(true) {
                                 continue;
                             }
-
-                            if any_found {
-                                panic!("An opcode ({:#06x}) has already matched, when processing '{}'. ", opcode, op_encoding.0);
-                            }
-                            any_found = true;
                         }
                         Err(e) => {
                             panic!(
@@ -82,19 +76,19 @@ impl Generator {
                             );
                         }
                     },
-                    None => {}
+                    None => {
+                        panic!("Missing pre-compiled encoding for: {}", op_encoding.0);
+                    }
                 }
 
                 self.ops.insert(
-                    opcode.try_into().unwrap(),
+                    (op_encoding.1.prefix, opcode.try_into().unwrap()),
                     op::from_encoding_pattern(opcode.try_into().unwrap(), op_encoding.1),
                 );
-
-                if any_found {
-                    break;
-                }
             }
         }
+
+        println!("Found {} opcodes", self.ops.len());
     }
 
     fn generate_file(&self, file: &mut File) {
@@ -123,8 +117,8 @@ impl Generator {
         writeln!(file, "None => {{").unwrap();
         writeln!(file, "match next_opcode.opcode {{").unwrap();
         for opcode in 0..256 {
-            if self.ops.contains_key(&opcode) && self.ops[&opcode].prefix == None {
-                self.generate_op_match_arm_token_stream(file, &self.ops[&opcode]);
+            if self.ops.contains_key(&(None, opcode)) {
+                self.generate_op_match_arm_token_stream(file, &self.ops[&(None, opcode)]);
             } else {
                 writeln!(
                     file,
@@ -145,14 +139,16 @@ impl Generator {
         // Prefix
         writeln!(file, "Some(prefix) => {{").unwrap();
         writeln!(file, "self.registers.inc_pc(1);").unwrap();
-        writeln!(file, "next_opcode = self.read_next_opcode();").unwrap();
         writeln!(file, "match prefix {{").unwrap();
         for prefix in &self.prefixes {
             writeln!(file, "{:#04X} => {{", prefix).unwrap();
             writeln!(file, "match next_opcode.opcode {{").unwrap();
             for opcode in 0..256 {
-                if self.ops.contains_key(&opcode) && self.ops[&opcode].prefix == Some(*prefix) {
-                    self.generate_op_match_arm_token_stream(file, &self.ops[&opcode]);
+                if self.ops.contains_key(&(Some(*prefix), opcode)) {
+                    self.generate_op_match_arm_token_stream(
+                        file,
+                        &self.ops[&(Some(*prefix), opcode)],
+                    );
                 }
             }
             writeln!(
@@ -279,7 +275,7 @@ impl Generator {
                     writeln!(file, "cpu.mmu.write8(0x00, {:#04X});", op.opcode).unwrap();
                 }
                 for set in &test.set {
-                    writeln!(file, "cpu.{};", set).unwrap();
+                    writeln!(file, "{};", set).unwrap();
                 }
 
                 writeln!(file, "cpu.tick();").unwrap();
@@ -289,7 +285,7 @@ impl Generator {
                     if reg.contains("flag_") {
                         cast = " != 0".to_string();
                     }
-                    writeln!(file, "assert_eq!(cpu.{}, {:#04x}{cast});", reg, val).unwrap();
+                    writeln!(file, "assert_eq!({}, {:#04x}{cast});", reg, val).unwrap();
                 }
                 writeln!(file, "}}").unwrap();
             }
