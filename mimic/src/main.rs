@@ -5,6 +5,7 @@ use memory::{memory::Memory, test_memory};
 
 mod cpu;
 mod int_utils;
+mod main_window;
 mod memory;
 
 fn main() {
@@ -20,6 +21,16 @@ fn main() {
     cpu.registers.set_a(1);
     cpu.registers.set_b(2);
 
+    let main_window = main_window::new("Mimic".to_string(), 2048, 1024);
+    main_window.main_loop(|run, ui| {
+        let w = ui.window("hello world");
+        w.build(|| {
+            ui.text("Hello World!");
+            if ui.button("Exit") {
+                *run = false;
+            }
+        });
+    });
     loop {
         cpu.tick();
     }
