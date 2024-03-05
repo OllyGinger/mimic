@@ -1,3 +1,5 @@
+use crate::cartridge::Cartridge;
+
 use super::memory::Memory;
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
@@ -36,6 +38,10 @@ impl MMU {
 
             self.interfaces.insert(ord_range, interface.clone());
         }
+    }
+
+    pub fn map_cartridge(&mut self, cart: Cartridge) {
+        self.add_interface([0x0000..cart.header.rom_size], cart);
     }
 
     pub fn tick(&mut self) {

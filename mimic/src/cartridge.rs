@@ -1,0 +1,79 @@
+use log::{error, trace, warn};
+
+#[derive(Debug, PartialEq)]
+pub enum CGBMode {
+    None,
+    SupportsCGB,
+    RequiresCGB,
+}
+
+#[derive(Debug)]
+pub struct Header {
+    pub entry_point: [u8; 4],
+    title: String,
+    //pub cart_type: mbc::MbcType, // TODO Implement this
+    pub rom_size: usize,
+    ram_size: usize,
+    pub cgb_mode: CGBMode,
+    pub header_checksum: u8,
+}
+
+pub struct Cartridge {
+    pub header: Header,
+}
+
+pub fn new(cart_data: Vec<u8>) -> Cartridge {
+    let header = parse_header(cart_data);
+    Cartridge { header: header }
+}
+
+fn parse_header(cart_data: Vec<u8>) -> Header {
+    // Entry point
+    let entry_point = cart_data[0x00..0x04].try_into().unwrap();
+
+    // Title
+    let title_bytes = cart_data[0x134..0x143].to_vec();
+    let title = String::from_utf8(title_bytes).unwrap();
+
+    let cgb_mode = match cart_data[0x143] {
+        0x00 => CGBMode::None,
+        0x80 => CGBMode::SupportsCGB,
+        0xC0 => CGBMode::RequiresCGB,
+        _ => panic!("Unknown CGB flag {:02x}", cart_data[0x143]),
+    };
+
+    // $0147 - Cartridge Type - TODO
+
+    // Mem sizes
+    let rom_size = parse_rom_size(cart_data[0x0148]);
+    let ram_size = parse_ram_size(cart_data[0x0149]);
+
+    Header {
+        entry_point,
+        title,
+        rom_size,
+        ram_size,
+        cgb_mode,
+        header_checksum: 0,
+    }
+}
+
+fn parse_rom_size(val: u8) -> usize {
+    (32 * 1024) * (1 << val)
+}
+
+pub fn parse_ram_size(val: u8) -> usize {
+    match val {
+        0x0 => 0,
+        0x2 => 8 * 1024,
+        0x3 => 32 * 1024,
+        0x4 => 128 * 1024,
+        0x5 => 64 * 1024,
+        _ => {
+            warn!(target: "cartridge", "Invalid RAM size while parsing cart header: {}", val);
+            0
+        }
+    }
+}
+
+impl Cartridge {}

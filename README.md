@@ -11,3 +11,6 @@ This is another experimental emulator that will attempt to emulate a few differe
 * Opcode decoding: https://github.com/floooh/chips/blob/master/codegen/z80_gen.py
 * Opcode table: https://izik1.github.io/gbops/index.html or https://gbdev.io/gb-opcodes//optables/octal
 * Datasheet: https://gekkio.fi/files/gb-docs/gbctr.pdf or http://www.z80.info/zip/z80cpu_um.pdf
+
+### Gameboy
+* Pan Docs: https://gbdev.io/pandocs/#the-cartridge-header
