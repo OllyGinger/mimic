@@ -8,8 +8,10 @@ mod cartridge;
 mod cpu;
 mod emulator;
 mod int_utils;
+mod interruptable;
 mod main_window;
 mod memory;
+mod tickable;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

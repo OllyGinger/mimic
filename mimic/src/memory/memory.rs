@@ -1,3 +1,5 @@
+use crate::{interruptable::Interruptable, tickable::Tickable};
+
 pub trait Memory {
     fn read8(&self, address: u16) -> u8;
     fn write8(&mut self, address: u16, value: u8);
@@ -9,9 +11,6 @@ pub trait Memory {
         self.write8(address, (value & 0xFF) as u8);
         self.write8(address + 1, ((value >> 8) & 0xFF) as u8);
     }
-
-    fn get_interrupt(&self) -> u8;
-    fn reset_interrupt(&mut self);
-
-    fn tick(&mut self) {}
 }
+
+pub trait MemoryInterface: Memory + Tickable + Interruptable {}

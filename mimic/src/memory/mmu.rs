@@ -1,12 +1,12 @@
 use crate::cartridge::Cartridge;
 
-use super::memory::Memory;
+use super::memory::{Memory, MemoryInterface};
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 pub struct MMU {
     /// Map of memory interfaces, each with its own address range. Multiple address ranges
     /// may map to the same memory interface
-    interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn Memory>>>,
+    interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn MemoryInterface>>>,
 
     interrupt_flag: u8,
 }
@@ -14,7 +14,7 @@ pub struct MMU {
 impl MMU {
     pub fn new() -> MMU {
         MMU {
-            interfaces: BTreeMap::<(usize, usize), Rc<RefCell<dyn Memory>>>::new(),
+            interfaces: BTreeMap::<(usize, usize), Rc<RefCell<dyn MemoryInterface>>>::new(),
             interrupt_flag: 0u8,
         }
     }
@@ -26,8 +26,11 @@ impl MMU {
     /// * `address_ranges` - The memory ranges to add the interface to. These must NOT overlap
     ///     with any previously added ranges.
     /// * `interface` - The memory interface for this range
-    pub fn add_interface<I>(&mut self, address_ranges: I, interface: Rc<RefCell<dyn Memory>>)
-    where
+    pub fn add_interface<I>(
+        &mut self,
+        address_ranges: I,
+        interface: Rc<RefCell<dyn MemoryInterface>>,
+    ) where
         I: IntoIterator<Item = std::ops::Range<usize>>,
     {
         for range in address_ranges {
@@ -78,7 +81,7 @@ impl MMU {
         interface.write8(address + 1, ((value >> 8) & 0xFF) as u8);
     }
 
-    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
+    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn MemoryInterface>> {
         for (range, interface) in &self.interfaces {
             if range.0 <= address as usize && address as usize <= range.1 {
                 return interface.clone();

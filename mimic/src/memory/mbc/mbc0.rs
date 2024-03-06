@@ -1,3 +1,5 @@
+use crate::memory::memory::Memory;
+
 struct MBC0 {
     rom: Vec<u8>,
 }
@@ -8,7 +10,7 @@ pub fn new(data: Vec<u8>) -> MBC0 {
 
 impl MBC0 {}
 
-impl MBC for MBC0 {
+impl Memory for MBC0 {
     fn read8(&self, address: u16) -> u8 {
         0
     }
