@@ -1,6 +1,6 @@
 use crate::memory::memory::Memory;
 
-struct MBC0 {
+pub struct MBC0 {
     rom: Vec<u8>,
 }
 
@@ -12,7 +12,9 @@ impl MBC0 {}
 
 impl Memory for MBC0 {
     fn read8(&self, address: u16) -> u8 {
-        0
+        self.rom[address as usize]
     }
-    fn write8(&mut self, address: u16, value: u8) {}
+    fn write8(&mut self, address: u16, value: u8) {
+        self.rom[address as usize] = value
+    }
 }

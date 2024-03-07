@@ -1,12 +1,12 @@
 use crate::cartridge::Cartridge;
 
-use super::memory::{Memory, MemoryInterface};
+use super::memory::Memory;
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 pub struct MMU {
     /// Map of memory interfaces, each with its own address range. Multiple address ranges
     /// may map to the same memory interface
-    interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn MemoryInterface>>>,
+    interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn Memory>>>,
 
     interrupt_flag: u8,
 }
@@ -14,7 +14,7 @@ pub struct MMU {
 impl MMU {
     pub fn new() -> MMU {
         MMU {
-            interfaces: BTreeMap::<(usize, usize), Rc<RefCell<dyn MemoryInterface>>>::new(),
+            interfaces: BTreeMap::<(usize, usize), Rc<RefCell<dyn Memory>>>::new(),
             interrupt_flag: 0u8,
         }
     }
@@ -26,11 +26,8 @@ impl MMU {
     /// * `address_ranges` - The memory ranges to add the interface to. These must NOT overlap
     ///     with any previously added ranges.
     /// * `interface` - The memory interface for this range
-    pub fn add_interface<I>(
-        &mut self,
-        address_ranges: I,
-        interface: Rc<RefCell<dyn MemoryInterface>>,
-    ) where
+    pub fn add_interface<I>(&mut self, address_ranges: I, interface: Rc<RefCell<dyn Memory>>)
+    where
         I: IntoIterator<Item = std::ops::Range<usize>>,
     {
         for range in address_ranges {
@@ -43,8 +40,9 @@ impl MMU {
         }
     }
 
-    pub fn map_cartridge(&mut self, cart: Cartridge) {
-        self.add_interface([0x0000..cart.header.rom_size], cart);
+    pub fn map_cartridge(&mut self, cart: Rc<RefCell<Cartridge>>) {
+        let rom_size = cart.borrow().header.rom_size;
+        self.add_interface([0x0000..rom_size], cart);
     }
 
     pub fn tick(&mut self) {
@@ -81,7 +79,7 @@ impl MMU {
         interface.write8(address + 1, ((value >> 8) & 0xFF) as u8);
     }
 
-    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn MemoryInterface>> {
+    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
         for (range, interface) in &self.interfaces {
             if range.0 <= address as usize && address as usize <= range.1 {
                 return interface.clone();

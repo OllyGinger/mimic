@@ -1,5 +1,8 @@
 use log::{error, trace, warn};
 
+use crate::memory::mbc::{self, MbcType};
+use crate::memory::memory::Memory;
+
 #[derive(Debug, PartialEq)]
 pub enum CGBMode {
     None,
@@ -11,7 +14,7 @@ pub enum CGBMode {
 pub struct Header {
     pub entry_point: [u8; 4],
     title: String,
-    //pub cart_type: mbc::MbcType, // TODO Implement this
+    pub mbc_type: MbcType,
     pub rom_size: usize,
     ram_size: usize,
     pub cgb_mode: CGBMode,
@@ -20,14 +23,19 @@ pub struct Header {
 
 pub struct Cartridge {
     pub header: Header,
+    pub mbc: Box<dyn Memory>,
 }
 
 pub fn new(cart_data: Vec<u8>) -> Cartridge {
-    let header = parse_header(cart_data);
-    Cartridge { header: header }
+    let header = parse_header(&cart_data);
+    let mbc = mbc::new(header.mbc_type, cart_data.clone());
+    Cartridge {
+        header: header,
+        mbc: mbc,
+    }
 }
 
-fn parse_header(cart_data: Vec<u8>) -> Header {
+fn parse_header(cart_data: &Vec<u8>) -> Header {
     // Entry point
     let entry_point = cart_data[0x00..0x04].try_into().unwrap();
 
@@ -42,7 +50,13 @@ fn parse_header(cart_data: Vec<u8>) -> Header {
         _ => panic!("Unknown CGB flag {:02x}", cart_data[0x143]),
     };
 
-    // $0147 - Cartridge Type - TODO
+    // $0147 - Cartridge Type
+    let mbc_type = match MbcType::try_from(cart_data[0x147]) {
+        Ok(t) => t,
+        Err(_) => {
+            panic!("Failed to parse cartridge type: {}", cart_data[0x147]);
+        }
+    };
 
     // Mem sizes
     let rom_size = parse_rom_size(cart_data[0x0148]);
@@ -51,6 +65,7 @@ fn parse_header(cart_data: Vec<u8>) -> Header {
     Header {
         entry_point,
         title,
+        mbc_type,
         rom_size,
         ram_size,
         cgb_mode,
@@ -62,7 +77,7 @@ fn parse_rom_size(val: u8) -> usize {
     (32 * 1024) * (1 << val)
 }
 
-pub fn parse_ram_size(val: u8) -> usize {
+fn parse_ram_size(val: u8) -> usize {
     match val {
         0x0 => 0,
         0x2 => 8 * 1024,
@@ -77,3 +92,13 @@ pub fn parse_ram_size(val: u8) -> usize {
 }
 
 impl Cartridge {}
+
+impl Memory for Cartridge {
+    fn read8(&self, address: u16) -> u8 {
+        self.mbc.read8(address)
+    }
+
+    fn write8(&mut self, address: u16, value: u8) {
+        self.mbc.write8(address, value);
+    }
+}
