@@ -1161,7 +1161,7 @@ JP n16:
     let imm = self.mmu.read16(self.registers.pc());
     self.registers.inc_pc(2);
     self.registers.set_pc(imm);
-
+    
 # ####### 0xCB Prefixed Ops ########
 # --- Quadrant 0 ---
 # Z 0 0 C

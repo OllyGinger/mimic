@@ -1,3 +1,5 @@
+use log::trace;
+
 use crate::memory::mmu::MMU;
 
 use super::registers::{Flags, Registers};
@@ -40,6 +42,15 @@ impl CPU {
         }
 
         NextOpcode { opcode, prefix }
+    }
+
+    pub fn pre_tick(&mut self) {
+        println!(
+            "OP: PC: {:04X} - {}",
+            self.registers.pc(),
+            This needs to be able to read prefix better. Maybe it shouldn't use u32
+            self.disassemble(self.mmu.read8(address)self.registers.pc(), [0, 0, 0, 0])
+        );
     }
 
     pub fn inc8(&self, val: u8) -> (u8, Flags) {
