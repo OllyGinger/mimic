@@ -3,12 +3,13 @@ use std::rc::Rc;
 
 use crate::cartridge::{self, Cartridge};
 use crate::cpu::cpu::CPU;
+use crate::gpu::gpu::GPU;
 use crate::main_window;
 use crate::memory::mmu::MMU;
 
 pub struct Emulator {
     cpu: CPU,
-    gpu: (),
+    gpu: Rc<RefCell<GPU>>,
 }
 
 impl Emulator {
@@ -24,9 +25,14 @@ impl Emulator {
         let mut mmu = MMU::new();
         mmu.map_cartridge(Rc::new(RefCell::new(cart)));
 
-        let cpu = CPU::new(mmu);
+        let gpu = Rc::new(RefCell::new(GPU::new()));
+        mmu.add_interface([0x8000..0xFFFF], gpu.clone());
 
-        Emulator { cpu, gpu: () }
+        let cpu = CPU::new(mmu);
+        Emulator {
+            cpu,
+            gpu: gpu.clone(),
+        }
     }
 
     pub fn run(&mut self) {

@@ -7,6 +7,7 @@ use memory::{mbc::MBC, memory::Memory, test_memory};
 mod cartridge;
 mod cpu;
 mod emulator;
+mod gpu;
 mod int_utils;
 mod main_window;
 mod memory;

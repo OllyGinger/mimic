@@ -81,7 +81,7 @@ impl MMU {
 
     fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
         for (range, interface) in &self.interfaces {
-            if range.0 <= address as usize && address as usize <= range.1 {
+            if range.0 <= address as usize && (address as usize) < range.1 {
                 return interface.clone();
             }
         }
