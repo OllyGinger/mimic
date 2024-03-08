@@ -49,7 +49,7 @@
                 //"--rom-path=roms/dmg-acid2.gb",
                 //"--rom-path=roms/lycscx.gb",
                 //"--rom-path=roms/lycscy.gb",
-                //"--boot-rom-path=roms/dmg_boot.bin"
+                "--boot-rom-path=roms/dmg_boot.bin"
             ],
             "cwd": "${workspaceFolder}"
         },

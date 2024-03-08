@@ -12,9 +12,14 @@ pub struct Emulator {
 }
 
 impl Emulator {
-    pub fn from_rom_path(rom_path: String) -> Self {
+    pub fn from_rom_path(boot_rom_path: Option<String>, rom_path: String) -> Self {
         let rom_bytes = std::fs::read(rom_path).unwrap();
-        let cart = cartridge::new(rom_bytes);
+        let boot_rom_bytes: Option<Vec<u8>> = if let Some(path) = boot_rom_path {
+            Some(std::fs::read(path).unwrap())
+        } else {
+            None
+        };
+        let cart = cartridge::new(boot_rom_bytes, rom_bytes);
 
         let mut mmu = MMU::new();
         mmu.map_cartridge(Rc::new(RefCell::new(cart)));

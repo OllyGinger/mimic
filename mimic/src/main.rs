@@ -25,6 +25,6 @@ fn main() {
     pretty_env_logger::init();
     let args: Args = Args::parse();
 
-    let mut emulator = emulator::Emulator::from_rom_path(args.rom_path);
+    let mut emulator = emulator::Emulator::from_rom_path(args.boot_rom_path, args.rom_path);
     emulator.run();
 }

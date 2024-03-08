@@ -92,6 +92,7 @@ impl Generator {
         writeln!(
             file,
             "use super::cpu::CPU;
+            use super::cpu::OpcodeAndPrefix;
             impl CPU {{"
         )
         .unwrap();
@@ -189,20 +190,55 @@ impl Generator {
     fn generate_disassemble_fn(&self, file: &mut File) {
         writeln!(
             file,
-            "pub fn disassemble(&self, opcode: u16, args: [u8;4]) -> String {{
-                match opcode {{"
+            "pub fn disassemble(&self, opcode: OpcodeAndPrefix) -> String {{
+                match opcode.prefix {{"
         )
         .unwrap();
-        for opcode in 0..0xffff {
-            let op = (opcode & 0xff) as u32;
-            let mut prefix = None;
-            let p = (opcode >> 8) as u8;
-            if p != 0 {
-                prefix = Some(p);
+
+        // No Prefix
+        writeln!(
+            file,
+            "None => {{
+                match opcode.opcode {{"
+        )
+        .unwrap();
+        for opcode in 0..256 {
+            if self.ops.contains_key(&(None, opcode)) {
+                self.generate_disassembly_op_match_arm(file, &self.ops[&(None, opcode)]);
             }
-            if self.ops.contains_key(&(prefix, op)) {
-                self.generate_disassembly_op_match_arm(file, &self.ops[&(prefix, op)]);
+        }
+        writeln!(
+            file,
+            "_ => {{panic!(\"Unknown opcode: {{:#04X}}\", opcode.opcode);}}
+        }}
+    }}"
+        )
+        .unwrap();
+
+        // Prefixes
+        for prefix in &self.prefixes {
+            writeln!(
+                file,
+                "Some({:#04X}) => {{
+                match opcode.opcode {{",
+                prefix
+            )
+            .unwrap();
+            for opcode in 0..256 {
+                if self.ops.contains_key(&(Some(*prefix), opcode)) {
+                    self.generate_disassembly_op_match_arm(
+                        file,
+                        &self.ops[&(Some(*prefix), opcode)],
+                    );
+                }
             }
+            writeln!(
+                file,
+                "_ => {{panic!(\"Unknown opcode: {{:#04X}}\", opcode.opcode);}}
+                }}
+            }}",
+            )
+            .unwrap();
         }
         writeln!(
             file,
@@ -216,18 +252,13 @@ impl Generator {
     }
 
     fn generate_disassembly_op_match_arm(&self, file: &mut File, op: &Op) {
-        let mut opcode = op.opcode;
-        if let Some(prefix) = op.prefix {
-            opcode = (op.prefix.unwrap() as u32) << 8u32 | op.opcode;
-        }
-
         write!(
             file,
             "
-        {:#06X} => {{
+        {:#04X} => {{
             \"{}\".to_string()
         }}",
-            opcode, op.mnemonic
+            op.opcode as u8, op.mnemonic
         )
         .unwrap();
     }

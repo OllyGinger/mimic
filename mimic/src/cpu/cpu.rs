@@ -11,9 +11,10 @@ pub struct CPU {
     pub mmu: MMU,
 }
 
-pub struct NextOpcode {
+pub struct OpcodeAndPrefix {
     pub opcode: u8,
     pub prefix: Option<u8>,
+    pub args: [u8; 2],
 }
 
 impl CPU {
@@ -29,27 +30,43 @@ impl CPU {
         self.halt = true;
     }
 
+    // TODO: This should probably check if we're about to read
+    // past the end of valid memory
+    pub fn read_next_opcode(&self) -> OpcodeAndPrefix {
+        self.decode_opcode([
+            self.mmu.read8(self.registers.pc()),
+            self.mmu.read8(self.registers.pc() + 1),
+            self.mmu.read8(self.registers.pc() + 2),
+            self.mmu.read8(self.registers.pc() + 3),
+        ])
+    }
+
     // Currently only supports 0xCB prefix (fine for SM83 CPU)
-    pub fn read_next_opcode(&mut self) -> NextOpcode {
-        let prefix_or_opcode = self.mmu.read8(self.registers.pc());
+    pub fn decode_opcode(&self, data: [u8; 4]) -> OpcodeAndPrefix {
+        let prefix_or_opcode = data[0];
         let mut prefix: Option<u8> = None;
+        let mut args = data[1..3].try_into().unwrap();
         let opcode;
         if prefix_or_opcode == 0xCB {
-            opcode = self.mmu.read8(self.registers.pc() + 1);
+            opcode = data[1];
             prefix = Some(0xCB);
+            args = data[2..4].try_into().unwrap();
         } else {
             opcode = prefix_or_opcode;
         }
 
-        NextOpcode { opcode, prefix }
+        OpcodeAndPrefix {
+            opcode,
+            prefix,
+            args,
+        }
     }
 
     pub fn pre_tick(&mut self) {
         println!(
-            "OP: PC: {:04X} - {}",
+            "{:04X}: {}",
             self.registers.pc(),
-            This needs to be able to read prefix better. Maybe it shouldn't use u32
-            self.disassemble(self.mmu.read8(address)self.registers.pc(), [0, 0, 0, 0])
+            self.disassemble(self.read_next_opcode())
         );
     }
 

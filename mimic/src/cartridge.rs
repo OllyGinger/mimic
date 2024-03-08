@@ -24,14 +24,16 @@ pub struct Header {
 pub struct Cartridge {
     pub header: Header,
     pub mbc: Box<dyn Memory>,
+    pub boot_rom_data: Option<Vec<u8>>,
 }
 
-pub fn new(cart_data: Vec<u8>) -> Cartridge {
+pub fn new(boot_rom_data: Option<Vec<u8>>, cart_data: Vec<u8>) -> Cartridge {
     let header = parse_header(&cart_data);
     let mbc = mbc::new(header.mbc_type, cart_data.clone());
     Cartridge {
         header: header,
         mbc: mbc,
+        boot_rom_data: boot_rom_data.clone(),
     }
 }
 
@@ -95,7 +97,15 @@ impl Cartridge {}
 
 impl Memory for Cartridge {
     fn read8(&self, address: u16) -> u8 {
-        self.mbc.read8(address)
+        // Read the boot rom if it exists
+        if let Some(boot_rom_data) = &self.boot_rom_data {
+            match address {
+                0x0000..=0x00ff => boot_rom_data[address as usize],
+                _ => self.mbc.read8(address),
+            }
+        } else {
+            self.mbc.read8(address)
+        }
     }
 
     fn write8(&mut self, address: u16, value: u8) {
