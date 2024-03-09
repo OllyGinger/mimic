@@ -15,3 +15,6 @@ This is another experimental emulator that will attempt to emulate a few differe
 ### Gameboy
 * Pan Docs: https://gbdev.io/pandocs/#the-cartridge-header
 * Boot rom disassm: https://gist.github.com/knightsc/ab5ebda52045b87fa1772f5824717ddf
+
+### Gameboy Advance
+* Decoding ARM7: https://www.gregorygaines.com/blog/decoding-the-arm7tdmi-instruction-set-game-boy-advance/
