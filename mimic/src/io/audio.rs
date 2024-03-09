@@ -46,7 +46,8 @@ impl Memory for Audio {
         match address {
             0xff26 => self.master_control.bits,
 
-            _ => panic!("Unmapped audio address: {:#06x}", address),
+            //_ => panic!("Unmapped audio address: {:#06x}", address),
+            _ => 0,
         }
     }
 
@@ -54,7 +55,8 @@ impl Memory for Audio {
         match address {
             0xff26 => self.set_master_control(value),
 
-            _ => panic!("Unmapped audio address: {:#06x}", address),
+            //_ => panic!("Unmapped audio address: {:#06x}", address),
+            _ => {}
         }
     }
 

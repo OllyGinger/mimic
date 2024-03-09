@@ -1161,7 +1161,60 @@ JP n16:
     let imm = self.mmu.read16(self.registers.pc());
     self.registers.inc_pc(2);
     self.registers.set_pc(imm);
-    
+  tests:
+    - set:
+      - cpu.mmu.write16(0x0001, 0x1234)
+      expect:
+        - [cpu.registers.pc(), 0x1234]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+LDH (C), A:
+  encoding: (x == 3 && y == 4 && z == 2)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.mmu.write8(0xFF00 | self.registers.c() as u16, self.registers.a());
+  tests:
+    - set:
+        - cpu.registers.set_a(0xfa)
+        - cpu.registers.set_c(0xff)
+      expect:
+        - [cpu.mmu.read8(0xff00 | 0xff), 0xfa]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+LDH (n8), A:
+  encoding: (x == 3 && y == 4 && z == 0)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc());
+    self.mmu.write8(0xFF00 | imm as u16, self.registers.a());
+  tests:
+    - set:
+        - cpu.registers.set_a(0xfa)
+        - cpu.mmu.write8(0x0001, 0x12)
+      expect:
+        - [cpu.mmu.read8(0xff00 | 0x12), 0xfa]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+  
 # ####### 0xCB Prefixed Ops ########
 # --- Quadrant 0 ---
 # Z 0 0 C

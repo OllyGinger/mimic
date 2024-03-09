@@ -305,9 +305,9 @@ impl Generator {
                 use std::cell::RefCell;
                 
                 fn create_test_cpu() -> CPU {{
-                    let mut memory = test_memory::TestMemory::new();
+                    let memory = test_memory::TestMemory::new();
                     let mut mmu: MMU = MMU::new();
-                    mmu.add_interface([0x0000..0xFFFF], Rc::new(RefCell::new(memory)));
+                    mmu.add_interface(Rc::new(RefCell::new(memory)));
                     CPU::new(mmu)
                 }}"
         )
