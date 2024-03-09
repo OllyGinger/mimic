@@ -1,3 +1,7 @@
+use std::ops::RangeInclusive;
+
+pub type MemoryRangeInclusive = RangeInclusive<usize>;
+
 pub trait Memory {
     fn read8(&self, address: u16) -> u8;
     fn write8(&mut self, address: u16, value: u8);
@@ -18,5 +22,5 @@ pub trait Memory {
     fn reset_interrupt(&mut self) {}
 
     /// Get a list of memory mapped ranges that are supported by this object
-    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>>;
+    fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive>;
 }

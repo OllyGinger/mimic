@@ -28,13 +28,25 @@ impl MMU {
     /// * `interface` - The memory interface for this range
     pub fn add_interface(&mut self, interface: Rc<RefCell<dyn Memory>>) {
         for range in interface.borrow().mapped_ranges() {
-            let ord_range = (range.start, range.end);
-            if self.interfaces.contains_key(&ord_range) {
-                panic!("Address ranges must not overlap. Range: {:?}", ord_range);
+            let ord_range = (*range.start(), *range.end());
+            if self.check_map_overlap(ord_range) {
+                panic!(
+                    "Address ranges must not overlap. Range: {:#06x}-{:#06x}",
+                    ord_range.0, ord_range.1
+                );
             }
 
             self.interfaces.insert(ord_range, interface.clone());
         }
+    }
+
+    fn check_map_overlap(&self, range: (usize, usize)) -> bool {
+        for (key, _) in self.interfaces.iter() {
+            if range.0 < key.1 && range.1 > key.0 {
+                return true; // Overlap found
+            }
+        }
+        false // No overlap found
     }
 
     pub fn map_cartridge(&mut self, cart: Rc<RefCell<Cartridge>>) {
@@ -77,11 +89,22 @@ impl MMU {
 
     fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
         for (range, interface) in &self.interfaces {
-            if address as usize >= range.0 && (address as usize) < range.1 {
+            if address as usize >= range.0 && (address as usize) <= range.1 {
                 return interface.clone();
             }
         }
 
-        panic!("Address is not mapped to MMU: {:#06x}", address);
+        // List out valid ranges
+        let valid_ranges;
+        valid_ranges = self
+            .interfaces
+            .keys()
+            .map(|(start, end)| format!("{:#06x}-{:#06x}", start, end))
+            .collect::<Vec<String>>();
+        panic!(
+            "Address is not mapped to MMU: {:#06x}\nMapped ranges:\n  {}",
+            address,
+            valid_ranges.join("\n  ")
+        );
     }
 }

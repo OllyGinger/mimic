@@ -1,4 +1,4 @@
-use crate::memory::memory::Memory;
+use crate::memory::memory::{Memory, MemoryRangeInclusive};
 
 const VRAM_SIZE: usize = 0x4000;
 
@@ -7,7 +7,7 @@ pub struct GPU {
     vram_bank: usize,
 
     // Internals
-    mapped_ranges: Vec<std::ops::Range<usize>>,
+    mapped_ranges: Vec<MemoryRangeInclusive>,
 }
 
 impl GPU {
@@ -17,7 +17,7 @@ impl GPU {
             vram_bank: 1,
 
             // Internals
-            mapped_ranges: vec![0x8000..0xA000], // VRam
+            mapped_ranges: vec![0x8000..=0x9FFF], // VRam
         }
     }
 }
@@ -39,7 +39,7 @@ impl Memory for GPU {
         }
     }
 
-    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>> {
+    fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         &self.mapped_ranges
     }
 }

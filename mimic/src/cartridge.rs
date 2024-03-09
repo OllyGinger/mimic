@@ -1,7 +1,7 @@
 use log::{error, trace, warn};
 
 use crate::memory::mbc::{self, MbcType};
-use crate::memory::memory::Memory;
+use crate::memory::memory::{Memory, MemoryRangeInclusive};
 
 #[derive(Debug, PartialEq)]
 pub enum CGBMode {
@@ -112,7 +112,7 @@ impl Memory for Cartridge {
         self.mbc.write8(address, value);
     }
 
-    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>> {
+    fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         self.mbc.mapped_ranges()
     }
 }
