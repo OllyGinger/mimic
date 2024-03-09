@@ -9,6 +9,7 @@ mod cpu;
 mod emulator;
 mod gpu;
 mod int_utils;
+mod io;
 mod main_window;
 mod memory;
 

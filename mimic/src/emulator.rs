@@ -4,8 +4,8 @@ use std::rc::Rc;
 use crate::cartridge::{self, Cartridge};
 use crate::cpu::cpu::CPU;
 use crate::gpu::gpu::GPU;
-use crate::main_window;
 use crate::memory::mmu::MMU;
+use crate::{io, main_window};
 
 pub struct Emulator {
     cpu: CPU,
@@ -27,6 +27,9 @@ impl Emulator {
 
         let gpu = Rc::new(RefCell::new(GPU::new()));
         mmu.add_interface(gpu.clone());
+
+        let audio = Rc::new(RefCell::new(io::audio::Audio::new()));
+        mmu.add_interface(audio.clone());
 
         let cpu = CPU::new(mmu);
         Emulator {
