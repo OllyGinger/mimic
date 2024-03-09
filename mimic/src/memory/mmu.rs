@@ -26,11 +26,8 @@ impl MMU {
     /// * `address_ranges` - The memory ranges to add the interface to. These must NOT overlap
     ///     with any previously added ranges.
     /// * `interface` - The memory interface for this range
-    pub fn add_interface<I>(&mut self, address_ranges: I, interface: Rc<RefCell<dyn Memory>>)
-    where
-        I: IntoIterator<Item = std::ops::Range<usize>>,
-    {
-        for range in address_ranges {
+    pub fn add_interface(&mut self, interface: Rc<RefCell<dyn Memory>>) {
+        for range in interface.borrow().mapped_ranges() {
             let ord_range = (range.start, range.end);
             if self.interfaces.contains_key(&ord_range) {
                 panic!("Address ranges must not overlap. Range: {:?}", ord_range);
@@ -41,8 +38,7 @@ impl MMU {
     }
 
     pub fn map_cartridge(&mut self, cart: Rc<RefCell<Cartridge>>) {
-        let rom_size = cart.borrow().header.rom_size;
-        self.add_interface([0x0000..rom_size], cart);
+        self.add_interface(cart);
     }
 
     pub fn tick(&mut self) {
@@ -81,7 +77,7 @@ impl MMU {
 
     fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
         for (range, interface) in &self.interfaces {
-            if range.0 <= address as usize && (address as usize) < range.1 {
+            if address as usize >= range.0 && (address as usize) < range.1 {
                 return interface.clone();
             }
         }

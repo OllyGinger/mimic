@@ -5,6 +5,9 @@ const VRAM_SIZE: usize = 0x4000;
 pub struct GPU {
     vram: [u8; VRAM_SIZE],
     vram_bank: usize,
+
+    // Internals
+    mapped_ranges: Vec<std::ops::Range<usize>>,
 }
 
 impl GPU {
@@ -12,6 +15,9 @@ impl GPU {
         GPU {
             vram: [0; VRAM_SIZE],
             vram_bank: 1,
+
+            // Internals
+            mapped_ranges: vec![0x8000..0xA000], // VRam
         }
     }
 }
@@ -31,5 +37,9 @@ impl Memory for GPU {
             }
             _ => panic!("Unmapped GPU address: {:#06x}", address),
         }
+    }
+
+    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>> {
+        &self.mapped_ranges
     }
 }

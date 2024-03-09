@@ -3,6 +3,7 @@ const MEMORY_SIZE: usize = 1024 * 1024; //1MB
 
 pub struct TestMemory {
     memory: Vec<u8>,
+    mapped_ranges: Vec<std::ops::Range<usize>>,
     interrupt_flag: u8,
 }
 
@@ -10,6 +11,7 @@ impl TestMemory {
     pub fn new() -> TestMemory {
         TestMemory {
             memory: vec![0u8; MEMORY_SIZE],
+            mapped_ranges: vec![0x0000..MEMORY_SIZE],
             interrupt_flag: 0u8,
         }
     }
@@ -30,5 +32,9 @@ impl Memory for TestMemory {
 
     fn reset_interrupt(&mut self) {
         self.interrupt_flag = 0u8;
+    }
+
+    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>> {
+        &self.mapped_ranges
     }
 }

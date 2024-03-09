@@ -16,4 +16,7 @@ pub trait Memory {
         0
     }
     fn reset_interrupt(&mut self) {}
+
+    /// Get a list of memory mapped ranges that are supported by this object
+    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>>;
 }

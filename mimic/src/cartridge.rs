@@ -111,4 +111,8 @@ impl Memory for Cartridge {
     fn write8(&mut self, address: u16, value: u8) {
         self.mbc.write8(address, value);
     }
+
+    fn mapped_ranges(&self) -> &Vec<std::ops::Range<usize>> {
+        self.mbc.mapped_ranges()
+    }
 }

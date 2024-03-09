@@ -26,7 +26,7 @@ impl Emulator {
         mmu.map_cartridge(Rc::new(RefCell::new(cart)));
 
         let gpu = Rc::new(RefCell::new(GPU::new()));
-        mmu.add_interface([0x8000..0xFFFF], gpu.clone());
+        mmu.add_interface(gpu.clone());
 
         let cpu = CPU::new(mmu);
         Emulator {
