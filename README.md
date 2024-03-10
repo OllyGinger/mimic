@@ -18,3 +18,5 @@ This is another experimental emulator that will attempt to emulate a few differe
 
 ### Gameboy Advance
 * Decoding ARM7: https://www.gregorygaines.com/blog/decoding-the-arm7tdmi-instruction-set-game-boy-advance/
+* GBA Docs: https://mgba-emu.github.io/gbatek/#armopcodespsrtransfermrsmsr
+* GBA Emulator: https://github.com/michelhe/rustboyadvance-ng/tree/master
