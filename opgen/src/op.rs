@@ -46,6 +46,7 @@ fn handle_action_replacements(opcode: u32, action: &String) -> String {
         .replace("$RY", &get_register_name(encoding_params.y))
         .replace("$RZ", &get_register_name(encoding_params.z))
         .replace("$RRP", &get_register_pair_name(encoding_params.p))
+        .replace("$RR2P", &get_register_pair_af_name(encoding_params.p))
         .replace("$ALU", &get_alu_function(encoding_params.y))
         .replace("$ROTY", &get_rot_function_name(encoding_params.y))
         .replace("$NY", &encoding_params.y.to_string());
@@ -68,6 +69,10 @@ fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
         .replace("$RY", &get_register_description(encoding_params.y))
         .replace("$RZ", &get_register_description(encoding_params.z))
         .replace("$RRP", &get_register_pair_description(encoding_params.p))
+        .replace(
+            "$RR2P",
+            &get_register_pair_af_description(encoding_params.p),
+        )
         .replace("$ALU", &get_alu_function_description(encoding_params.y))
         .replace("$ROTY", &get_rot_function_description(encoding_params.y))
         .replace("$NY", &encoding_params.y.to_string());
@@ -112,6 +117,15 @@ fn get_register_pair_name(idx: u8) -> String {
 
 fn get_register_pair_description(idx: u8) -> String {
     get_register_pair_name(idx).to_uppercase()
+}
+
+fn get_register_pair_af_name(idx: u8) -> String {
+    const REGISTER: &'static [&'static str] = &["bc", "de", "hl", "af", "", "", "", ""];
+    REGISTER[idx as usize].to_string()
+}
+
+fn get_register_pair_af_description(idx: u8) -> String {
+    get_register_pair_af_name(idx).to_uppercase()
 }
 
 fn get_conditional_call_function(idx: u8) -> String {

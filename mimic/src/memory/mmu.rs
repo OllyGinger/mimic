@@ -3,12 +3,15 @@ use crate::cartridge::Cartridge;
 use super::memory::Memory;
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
+const HRAM_SIZE: usize = 0x7f;
+
 pub struct MMU {
     /// Map of memory interfaces, each with its own address range. Multiple address ranges
     /// may map to the same memory interface
     interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn Memory>>>,
 
     interrupt_flag: u8,
+    hram: [u8; HRAM_SIZE],
 }
 
 impl MMU {
@@ -16,6 +19,7 @@ impl MMU {
         MMU {
             interfaces: BTreeMap::<(usize, usize), Rc<RefCell<dyn Memory>>>::new(),
             interrupt_flag: 0u8,
+            hram: [0u8; HRAM_SIZE],
         }
     }
 
@@ -63,28 +67,36 @@ impl MMU {
     }
 
     pub fn read8(&self, address: u16) -> u8 {
-        let binding = self.get_mapped_interface(address);
-        let interface = binding.borrow();
-        interface.read8(address)
+        match address {
+            0xff80..=0xfffe => self.hram[address as usize & 0x007f],
+            _ => {
+                let binding = self.get_mapped_interface(address);
+                let interface = binding.borrow();
+                interface.read8(address)
+            }
+        }
     }
 
     pub fn write8(&mut self, address: u16, value: u8) {
-        let binding = self.get_mapped_interface(address);
-        let mut interface = binding.borrow_mut();
-        interface.write8(address, value);
+        match address {
+            0xff80..=0xfffe => self.hram[address as usize & 0x007f] = value,
+            _ => {
+                let binding = self.get_mapped_interface(address);
+                let mut interface = binding.borrow_mut();
+                interface.write8(address, value);
+            }
+        }
     }
 
     pub fn read16(&self, address: u16) -> u16 {
-        let binding = self.get_mapped_interface(address);
-        let interface = binding.borrow();
-        (interface.read8(address) as u16) | ((interface.read8(address + 1) as u16) << 8)
+        let msb = self.read8(address);
+        let lsb = self.read8(address + 1);
+        (msb as u16) | ((lsb as u16) << 8)
     }
 
     pub fn write16(&mut self, address: u16, value: u16) {
-        let binding = self.get_mapped_interface(address);
-        let mut interface = binding.borrow_mut();
-        interface.write8(address, (value & 0xFF) as u8);
-        interface.write8(address + 1, ((value >> 8) & 0xFF) as u8);
+        self.write8(address, (value & 0xFF) as u8);
+        self.write8(address + 1, ((value >> 8) & 0xFF) as u8);
     }
 
     fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn Memory>> {
@@ -95,8 +107,7 @@ impl MMU {
         }
 
         // List out valid ranges
-        let valid_ranges;
-        valid_ranges = self
+        let valid_ranges = self
             .interfaces
             .keys()
             .map(|(start, end)| format!("{:#06x}-{:#06x}", start, end))

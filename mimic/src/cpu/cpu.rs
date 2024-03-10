@@ -64,10 +64,15 @@ impl CPU {
 
     pub fn pre_tick(&mut self) {
         println!(
-            "{:04X}: {}",
+            "{:04X}: {}\t\t{}",
             self.registers.pc(),
-            self.disassemble(self.read_next_opcode())
+            self.disassemble(self.read_next_opcode()),
+            self.registers
         );
+
+        if self.registers.pc() == 0x0099 {
+            self.halt = true;
+        }
     }
 
     pub fn inc8(&self, val: u8) -> (u8, Flags) {
@@ -257,7 +262,7 @@ impl CPU {
 
     pub fn alu_rl(&mut self, mut val: u8) -> u8 {
         let carry = val & 0x80;
-        val <<= 1 | carry;
+        val <<= 1 | self.registers.flag_c() as u8;
         self.registers.set_flag_z(val == 0x00);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);
@@ -267,7 +272,7 @@ impl CPU {
 
     pub fn alu_rr(&mut self, mut val: u8) -> u8 {
         let carry = val & 0x01;
-        val >>= 1 | (carry << 7);
+        val >>= 1 | ((self.registers.flag_c() as u8) << 7);
         self.registers.set_flag_z(val == 0x00);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);

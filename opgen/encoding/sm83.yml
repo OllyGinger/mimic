@@ -1174,6 +1174,7 @@ JP n16:
       - [cpu.registers.flag_z(), 1]
       - [cpu.registers.flag_c(), 1]
 
+# - - - -
 LDH (C), A:
   encoding: (x == 3 && y == 4 && z == 2)
   mcycle_duration: 2
@@ -1194,12 +1195,14 @@ LDH (C), A:
       - [cpu.registers.flag_z(), 1]
       - [cpu.registers.flag_c(), 1]
 
+# - - - -
 LDH (n8), A:
   encoding: (x == 3 && y == 4 && z == 0)
   mcycle_duration: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
+    self.registers.inc_pc(1);
     self.mmu.write8(0xFF00 | imm as u16, self.registers.a());
   tests:
     - set:
@@ -1208,6 +1211,9 @@ LDH (n8), A:
       expect:
         - [cpu.mmu.read8(0xff00 | 0x12), 0xfa]
     - set:
+      expect:
+        - [cpu.registers.pc(), 0x2]
+    - set:
       - cpu.registers.enable_all_flags()
       expect:
       - [cpu.registers.flag_n(), 1]
@@ -1215,7 +1221,117 @@ LDH (n8), A:
       - [cpu.registers.flag_z(), 1]
       - [cpu.registers.flag_c(), 1]
   
-# ####### 0xCB Prefixed Ops ########
+# - - - -
+CALL n16:
+  encoding: (x == 3 && y == 1 && z == 5 )
+  mcycle_duration: 6
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    let new_sp = self.registers.sp().wrapping_sub(2);
+    self.registers.inc_pc(2);
+    self.mmu.write16(new_sp, self.registers.pc());
+    self.registers.set_pc(imm);
+    self.registers.set_sp(new_sp);
+  tests:
+    - set:
+        - cpu.mmu.write16(0x0001, 0x1234)
+        - cpu.registers.set_sp(0xffff)
+      expect:
+        - [cpu.registers.pc(), 0x1234]
+        - [cpu.registers.sp(), 0xfffd]
+        - [cpu.mmu.read16(cpu.registers.sp()), 0x0003]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+# - - - - 
+PUSH $RR2P:
+  encoding: (x == 3 && z == 5 && q == 0)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    let val = self.registers.$RR2P();
+    let new_sp = self.registers.sp().wrapping_sub(2);
+    self.mmu.write16(new_sp, val);
+    self.registers.set_sp(new_sp);
+  tests:
+    - set:
+        - cpu.registers.set_$RR2P(0xF5F0)
+        - cpu.registers.set_sp(0xffff)
+      expect:
+        - [cpu.registers.sp(), 0xfffd]
+        - [cpu.mmu.read16(cpu.registers.sp()), 0xF5F0]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+# - - - - 
+POP $RR2P:
+  encoding: (x == 3 && z == 1 && q == 0)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    let val = self.mmu.read16(self.registers.sp());
+    self.registers.set_sp(self.registers.sp().wrapping_add(2));
+    self.registers.set_$RR2P(val);
+  tests:
+    - set:
+        - cpu.mmu.write16(0xfffe, 0xF5F0)
+        - cpu.registers.set_sp(0xfffe)
+      expect:
+        - [cpu.registers.$RR2P(), 0xF5F0]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]      
+
+# - - - - 
+RET:
+  encoding: (x == 3 && y == 1 && z == 1)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    let val = self.mmu.read16(self.registers.sp());
+    self.registers.set_sp(self.registers.sp().wrapping_add(2));
+    self.registers.set_pc(val);
+
+# ADD Flags: Z 0 H C
+# SUB Flags: Z 1 H C
+# AND Flags: Z 0 1 0
+# XOR Flags: Z 0 0 0
+# CP Flags: Z 1 H C
+$ALU, n8:
+  encoding: (x == 3) && (z == 6)
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc());
+    self.registers.inc_pc(1);
+    self.alu_$ALU(imm);
+
+
+
+
+
+
+
+
+
+
+
+
+# ##################### 0xCB Prefixed Ops ######################
 # --- Quadrant 0 ---
 # Z 0 0 C
 $ROTY $RZ:
