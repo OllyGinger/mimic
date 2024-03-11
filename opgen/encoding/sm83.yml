@@ -1196,6 +1196,74 @@ LDH (C), A:
       - [cpu.registers.flag_c(), 1]
 
 # - - - -
+LD (n16), A:
+  encoding: (x == 3 && y == 5 && z == 2)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    self.registers.inc_pc(2);
+    self.mmu.write8(imm, self.registers.a());
+  tests:
+    - set:
+        - cpu.mmu.write16(0x0001,0xFADB)
+        - cpu.registers.set_a(0xfa)
+      expect:
+        - [cpu.mmu.read8(0xFADB), 0xfa]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+# - - - -
+LDH A, (n8):
+  encoding: (x == 3 && y == 6 && z == 0)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc());
+    let val = self.mmu.read8((0xFF00 | imm as u16) );
+    self.registers.inc_pc(1);
+    self.registers.set_a(val);
+  tests:
+    - set:
+        - cpu.mmu.write8(0x01, 0xBA)
+        - cpu.mmu.write8(0xFFBA, 0xFE)
+      expect:
+        - [cpu.registers.a(), 0xFE]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+# - - - -
+LD A, (C):
+  encoding: (x == 3 && y == 6 && z == 2)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_a(self.mmu.read8(0xFF00 | self.registers.c() as u16));
+  tests:
+    - set:
+        - cpu.mmu.write8(0xFFCC, 0xF0)
+        - cpu.registers.set_c(0xCC)
+      expect:
+        - [cpu.registers.a(), 0xf0]
+    - set:
+      - cpu.registers.enable_all_flags()
+      expect:
+      - [cpu.registers.flag_n(), 1]
+      - [cpu.registers.flag_h(), 1]
+      - [cpu.registers.flag_z(), 1]
+      - [cpu.registers.flag_c(), 1]
+
+# - - - -
 LDH (n8), A:
   encoding: (x == 3 && y == 4 && z == 0)
   mcycle_duration: 3

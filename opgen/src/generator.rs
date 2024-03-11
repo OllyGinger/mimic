@@ -1,3 +1,4 @@
+use crate::EncodingTest;
 use crate::{errors::BuildError, op, op::Op, parser, EncodingPattern};
 use evalexpr::*;
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -331,6 +332,7 @@ impl Generator {
                 .replace("+", "_inc_")
                 .replace("-", "_dec_")
                 .to_lowercase();
+
             for (idx, test) in tests.iter().enumerate() {
                 writeln!(
                     file,
