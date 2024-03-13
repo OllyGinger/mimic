@@ -10,6 +10,7 @@ mod int_utils;
 mod io;
 mod main_window;
 mod memory;
+mod tickable;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

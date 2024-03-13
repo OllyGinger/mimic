@@ -1,4 +1,5 @@
 use crate::cartridge::Cartridge;
+use crate::tickable::Tickable;
 
 use super::memory::Memory;
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
@@ -57,15 +58,6 @@ impl MMU {
         self.add_interface(cart);
     }
 
-    pub fn tick(&mut self) {
-        for (_, interface) in &mut self.interfaces {
-            let mut memory = interface.borrow_mut();
-            memory.tick();
-            self.interrupt_flag |= memory.get_interrupt();
-            memory.reset_interrupt();
-        }
-    }
-
     pub fn read8(&self, address: u16) -> u8 {
         match address {
             0xff80..=0xfffe => self.hram[address as usize & 0x007f],
@@ -117,5 +109,15 @@ impl MMU {
             address,
             valid_ranges.join("\n  ")
         );
+    }
+}
+
+impl Tickable for MMU {
+    fn tick(&mut self, _cycles: u8) {
+        for (_, interface) in &mut self.interfaces {
+            let mut memory = interface.borrow_mut();
+            self.interrupt_flag |= memory.get_interrupt();
+            memory.reset_interrupt();
+        }
     }
 }

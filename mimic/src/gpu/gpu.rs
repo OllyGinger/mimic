@@ -1,5 +1,8 @@
 use super::palette::Palette;
-use crate::memory::memory::{Memory, MemoryRangeInclusive};
+use crate::{
+    memory::memory::{Memory, MemoryRangeInclusive},
+    tickable::Tickable,
+};
 use bitflags::bitflags;
 
 const VRAM_SIZE: usize = 0x4000;
@@ -32,16 +35,19 @@ bitflags!(
 
 #[derive(PartialEq)]
 enum Mode {
-    AccessOAM,
-    AccessVRam,
-    HBlank,
-    VBlank,
+    AccessOAM,  // Mode 2 - OAM Scan. Access: VRAM CGB Palettes
+    AccessVRam, // Mode 3 - Drawing pixels. Access: None
+    HBlank,     // Mode 0 - End of a scanline. Access: All
+    VBlank,     // Mode 1 - End of a frame. Access: All
 }
 
 const ACCESS_OAM_CYCLES: isize = 21;
 const ACCESS_VRAM_CYCLES: isize = 43;
 const HBLANK_CYCLES: isize = 50;
 const VBLANK_LINE_CYCLES: isize = 114;
+
+const RENDER_LINE_COUNT: u8 = 144;
+const MAX_VBLANK_LINE: u8 = 153;
 
 impl Mode {
     fn bits(&self) -> u8 {
@@ -87,6 +93,7 @@ pub struct GPU {
 
     // Internals
     mapped_ranges: Vec<MemoryRangeInclusive>,
+    current_window_line: i32, // The line which the window is rendering so it can continue if the pos is changed
 }
 
 impl GPU {
@@ -118,6 +125,8 @@ impl GPU {
                 0x8000..=0x9FFF, // VRam
                 0xFF40..=0xFF4B, // GPU/LCD Control
             ],
+
+            current_window_line: 0,
         }
     }
 
@@ -142,6 +151,32 @@ impl GPU {
         }
 
         self.lcd_control = new_control;
+    }
+
+    fn change_mode(self: &mut GPU, mode: Mode) {
+        self.mode = mode;
+        self.cycles += self.mode.cycles(self.scx);
+        if match self.mode {
+            Mode::HBlank => self.lcd_status.contains(LCDStat::HBLANK_INT),
+            Mode::VBlank => {
+                self.window_pos_y_triggered = false;
+                //self.interrupt |= 0x01; // Vblank int
+                self.lcd_status.contains(LCDStat::VBLANK_INT)
+            }
+            Mode::AccessOAM => {
+                if self.lcd_control.contains(LCDControl::WINDOW_ON)
+                    && !self.window_pos_y_triggered
+                    && self.ly == self.window_pos_y
+                {
+                    self.window_pos_y_triggered = true;
+                    self.current_window_line = -1;
+                }
+                self.lcd_status.contains(LCDStat::ACCESS_OAM_INT)
+            }
+            _ => false,
+        } {
+            //self.interrupt |= 0x02; // Stat interrrupt
+        }
     }
 }
 
@@ -184,5 +219,35 @@ impl Memory for GPU {
 
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         &self.mapped_ranges
+    }
+}
+
+impl Tickable for GPU {
+    fn tick(&mut self, _cycles: u8) {
+        match self.mode {
+            Mode::AccessOAM => self.change_mode(Mode::AccessVRam),
+            Mode::AccessVRam => {
+                // Draw scanline
+                self.change_mode(Mode::HBlank);
+            }
+            Mode::HBlank => {
+                self.ly += 1;
+                if self.ly < RENDER_LINE_COUNT {
+                    self.change_mode(Mode::AccessOAM);
+                } else {
+                    self.change_mode(Mode::VBlank);
+                }
+            }
+            Mode::VBlank => {
+                self.ly += 1;
+                if self.ly > MAX_VBLANK_LINE {
+                    // End of the frame, ready to start next
+                    self.ly = 0;
+                    self.change_mode(Mode::AccessOAM);
+                } else {
+                    self.cycles += VBLANK_LINE_CYCLES
+                }
+            }
+        }
     }
 }

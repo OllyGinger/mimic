@@ -14,8 +14,6 @@ pub trait Memory {
         self.write8(address + 1, ((value >> 8) & 0xFF) as u8);
     }
 
-    fn tick(&mut self) {}
-
     fn get_interrupt(&self) -> u8 {
         0
     }
