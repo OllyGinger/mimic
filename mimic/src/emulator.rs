@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::cartridge::{self, Cartridge};
+use crate::cartridge::{self};
 use crate::cpu::cpu::CPU;
 use crate::gpu::gpu::GPU;
+use crate::io;
 use crate::memory::mmu::MMU;
-use crate::{io, main_window};
 
 pub struct Emulator {
     cpu: CPU,

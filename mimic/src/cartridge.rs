@@ -1,4 +1,4 @@
-use log::{error, trace, warn};
+use log::warn;
 
 use crate::memory::mbc::{self, MbcType};
 use crate::memory::memory::{Memory, MemoryRangeInclusive};

@@ -1,5 +1,3 @@
-use log::trace;
-
 use crate::memory::mmu::MMU;
 
 use super::registers::{Flags, Registers};

@@ -1225,7 +1225,7 @@ LDH A, (n8):
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
-    let val = self.mmu.read8((0xFF00 | imm as u16) );
+    let val = self.mmu.read8(0xFF00 | imm as u16);
     self.registers.inc_pc(1);
     self.registers.set_a(val);
   tests:

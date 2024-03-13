@@ -1,4 +1,3 @@
-use crate::EncodingTest;
 use crate::{errors::BuildError, op, op::Op, parser, EncodingPattern};
 use evalexpr::*;
 use std::collections::{BTreeMap, HashMap, HashSet};

@@ -1,8 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+#![allow(dead_code)]
 
 use clap::Parser;
-use cpu::cpu::CPU;
-use memory::{mbc::MBC, memory::Memory, test_memory};
 
 mod cartridge;
 mod cpu;
