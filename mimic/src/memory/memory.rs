@@ -1,5 +1,7 @@
 use std::ops::RangeInclusive;
 
+use crate::tickable::Tickable;
+
 pub type MemoryRangeInclusive = RangeInclusive<usize>;
 
 pub trait Memory {
@@ -22,3 +24,6 @@ pub trait Memory {
     /// Get a list of memory mapped ranges that are supported by this object
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive>;
 }
+
+pub trait TickableMemory: Memory + Tickable {}
+impl<T: Memory + Tickable> TickableMemory for T {}

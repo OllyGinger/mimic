@@ -182,7 +182,12 @@ impl Generator {
         writeln!(file, "}}").unwrap();
         writeln!(file, "}}").unwrap();
 
-        writeln!(file, "}}").unwrap();
+        writeln!(
+            file,
+            "}}
+        self.post_tick(mcycles);"
+        )
+        .unwrap();
         writeln!(file, "mcycles").unwrap();
         writeln!(file, "}}").unwrap();
     }

@@ -1,4 +1,4 @@
-use crate::memory::mmu::MMU;
+use crate::{memory::mmu::MMU, tickable::Tickable};
 
 use super::registers::{Flags, Registers};
 use crate::int_utils::IntExt;
@@ -61,16 +61,21 @@ impl CPU {
     }
 
     pub fn pre_tick(&mut self) {
-        println!(
-            "{:04X}: {}\t\t{}",
-            self.registers.pc(),
-            self.disassemble(self.read_next_opcode()),
-            self.registers
-        );
+        //println!(
+        //    "{:04X}: {}\t\t{}",
+        //    self.registers.pc(),
+        //    self.disassemble(self.read_next_opcode()),
+        //    self.registers
+        //);
 
-        if self.registers.pc() == 0x0099 {
+        if self.registers.pc() == 0x00e0 {
             self.halt = true;
         }
+    }
+
+    pub fn post_tick(&mut self, mcycles: u32) {
+        let cycles = (mcycles * 4) as u8;
+        self.mmu.tick(cycles);
     }
 
     pub fn inc8(&self, val: u8) -> (u8, Flags) {

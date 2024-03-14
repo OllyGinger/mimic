@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -7,7 +6,6 @@ use crate::cpu::cpu::CPU;
 use crate::gpu::gpu::GPU;
 use crate::io;
 use crate::memory::mmu::MMU;
-use crate::tickable::Tickable;
 
 pub struct Emulator {
     cpu: CPU,
@@ -53,8 +51,6 @@ impl Emulator {
         //});
         loop {
             self.cpu.tick();
-            let mut gpu_ref = self.gpu.borrow_mut();
-            gpu_ref.borrow_mut().new();
         }
     }
 }

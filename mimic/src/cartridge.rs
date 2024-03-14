@@ -2,6 +2,7 @@ use log::warn;
 
 use crate::memory::mbc::{self, MbcType};
 use crate::memory::memory::{Memory, MemoryRangeInclusive};
+use crate::tickable::Tickable;
 
 #[derive(Debug, PartialEq)]
 pub enum CGBMode {
@@ -115,4 +116,8 @@ impl Memory for Cartridge {
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         self.mbc.mapped_ranges()
     }
+}
+
+impl Tickable for Cartridge {
+    fn tick(&mut self, _cycles: u8) {}
 }

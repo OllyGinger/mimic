@@ -224,6 +224,12 @@ impl Memory for GPU {
 
 impl Tickable for GPU {
     fn tick(&mut self, _cycles: u8) {
+        self.cycles -= 1;
+
+        if self.cycles > 0 {
+            return;
+        }
+
         match self.mode {
             Mode::AccessOAM => self.change_mode(Mode::AccessVRam),
             Mode::AccessVRam => {

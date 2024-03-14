@@ -1,3 +1,5 @@
+use crate::tickable::Tickable;
+
 use super::memory::{Memory, MemoryRangeInclusive};
 const MEMORY_SIZE: usize = 1024 * 1024; //1MB
 
@@ -37,4 +39,8 @@ impl Memory for TestMemory {
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         &self.mapped_ranges
     }
+}
+
+impl Tickable for TestMemory {
+    fn tick(&mut self, _cycles: u8) {}
 }

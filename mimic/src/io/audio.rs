@@ -1,4 +1,4 @@
-use crate::memory::memory::Memory;
+use crate::{memory::memory::Memory, tickable::Tickable};
 use bitflags::bitflags;
 
 bitflags!(
@@ -63,4 +63,8 @@ impl Memory for Audio {
     fn mapped_ranges(&self) -> &Vec<crate::memory::memory::MemoryRangeInclusive> {
         &self.mapped_ranges
     }
+}
+
+impl Tickable for Audio {
+    fn tick(&mut self, _cycles: u8) {}
 }
