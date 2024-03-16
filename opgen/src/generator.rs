@@ -99,6 +99,7 @@ impl Generator {
 
         self.generate_tick_fn(file);
         self.generate_disassemble_fn(file);
+        self.generate_instruction_len_fn(file);
         writeln!(file, "}}").unwrap();
 
         self.generate_tests(file);
@@ -195,7 +196,7 @@ impl Generator {
     fn generate_disassemble_fn(&self, file: &mut File) {
         writeln!(
             file,
-            "pub fn disassemble(&self, opcode: OpcodeAndPrefix) -> String {{
+            "pub fn disassemble(opcode: &OpcodeAndPrefix) -> Option<String> {{
                 match opcode.prefix {{"
         )
         .unwrap();
@@ -214,7 +215,7 @@ impl Generator {
         }
         writeln!(
             file,
-            "_ => {{panic!(\"Unknown opcode: {{:#04X}}\", opcode.opcode);}}
+            "_ => {{None}}
         }}
     }}"
         )
@@ -239,7 +240,7 @@ impl Generator {
             }
             writeln!(
                 file,
-                "_ => {{panic!(\"Unknown opcode: {{:#04X}}\", opcode.opcode);}}
+                "_ => {{None}}
                 }}
             }}",
             )
@@ -247,7 +248,7 @@ impl Generator {
         }
         writeln!(
             file,
-            "_ => {{\"UNK\".to_string()}}
+            "_ => {{None}}
         }}
             "
         )
@@ -261,7 +262,7 @@ impl Generator {
             file,
             "
         {:#04X} => {{
-            \"{}\".to_string()
+            Some(\"{}\".to_string())
         }}",
             op.opcode as u8, op.mnemonic
         )
@@ -297,6 +298,82 @@ impl Generator {
         }
 
         writeln!(file, "}}").unwrap();
+    }
+
+    fn generate_instruction_len_fn(&self, file: &mut File) {
+        writeln!(
+            file,
+            "pub fn instruction_length(opcode: &OpcodeAndPrefix) -> Option<u8> {{
+                match opcode.prefix {{"
+        )
+        .unwrap();
+
+        // No Prefix
+        writeln!(
+            file,
+            "None => {{
+                match opcode.opcode {{"
+        )
+        .unwrap();
+        for opcode in 0..256 {
+            if self.ops.contains_key(&(None, opcode)) {
+                self.generate_instruction_len_match_arm(file, &self.ops[&(None, opcode)]);
+            }
+        }
+        writeln!(
+            file,
+            "_ => {{None}}
+        }}
+    }}"
+        )
+        .unwrap();
+
+        // Prefixes
+        for prefix in &self.prefixes {
+            writeln!(
+                file,
+                "Some({:#04X}) => {{
+                match opcode.opcode {{",
+                prefix
+            )
+            .unwrap();
+            for opcode in 0..256 {
+                if self.ops.contains_key(&(Some(*prefix), opcode)) {
+                    self.generate_instruction_len_match_arm(
+                        file,
+                        &self.ops[&(Some(*prefix), opcode)],
+                    );
+                }
+            }
+            writeln!(
+                file,
+                "_ => {{None}}
+                }}
+            }}",
+            )
+            .unwrap();
+        }
+        writeln!(
+            file,
+            "_ => {{None}}
+        }}
+            "
+        )
+        .unwrap();
+
+        writeln!(file, "}}").unwrap();
+    }
+
+    fn generate_instruction_len_match_arm(&self, file: &mut File, op: &Op) {
+        write!(
+            file,
+            "
+        {:#04X} => {{
+            Some({})
+        }}",
+            op.opcode as u8, op.length
+        )
+        .unwrap();
     }
 
     fn generate_tests(&self, file: &mut File) {

@@ -419,6 +419,7 @@ ADD HL, HL:
 LD $RRP, n16:
   encoding: (x == 0 && z == 1 && q == 0)
   mcycle_duration: 3
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -447,6 +448,7 @@ LD $RRP, n16:
 LD $RY, n8:
   encoding: (x == 0 && y != 6 && z == 6)
   mcycle_duration: 2
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
@@ -474,6 +476,7 @@ LD $RY, n8:
 LD (HL), n8:
   encoding: (x == 0 && y == 6 && z == 6)
   mcycle_duration: 3
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
@@ -902,6 +905,7 @@ RRA:
 LD (n16), SP:
   encoding: (x == 0 && y == 1 && z == 0)
   mcycle_duration: 5
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -929,6 +933,7 @@ LD (n16), SP:
 JR n8:
   encoding: (x == 0 && y == 3 && z == 0)
   mcycle_duration: 1
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc()) as i8;
@@ -956,6 +961,7 @@ JR n8:
 JR $CC-4, n8:
   encoding: (x == 0 && y >= 4 && y <= 7 && z == 0)
   conditional_duration: true
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc()) as i8;
@@ -1124,6 +1130,7 @@ RET $CC:
 JP $CC, n16:
   encoding: (x == 3 && y >= 0 && y <= 3 && z == 2)
   conditional_duration: true
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -1139,6 +1146,7 @@ JP $CC, n16:
 CALL $CC, n16:
   encoding: (x == 3 && y >= 0 && y <= 3 && z == 4)
   conditional_duration: true
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -1156,6 +1164,7 @@ CALL $CC, n16:
 JP n16:
   encoding: (x == 3 && y == 0 && z == 3)
   mcycle_duration: 4
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -1199,6 +1208,7 @@ LDH (C), A:
 LD (n16), A:
   encoding: (x == 3 && y == 5 && z == 2)
   mcycle_duration: 4
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -1222,6 +1232,7 @@ LD (n16), A:
 LDH A, (n8):
   encoding: (x == 3 && y == 6 && z == 0)
   mcycle_duration: 3
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
@@ -1267,6 +1278,7 @@ LD A, (C):
 LDH (n8), A:
   encoding: (x == 3 && y == 4 && z == 0)
   mcycle_duration: 3
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
@@ -1293,6 +1305,7 @@ LDH (n8), A:
 CALL n16:
   encoding: (x == 3 && y == 1 && z == 5 )
   mcycle_duration: 6
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
@@ -1382,6 +1395,7 @@ RET:
 # CP Flags: Z 1 H C
 $ALU, n8:
   encoding: (x == 3) && (z == 6)
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());

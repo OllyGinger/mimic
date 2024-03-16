@@ -42,13 +42,18 @@ impl Audio {
 }
 
 impl Memory for Audio {
-    fn read8(&self, address: u16) -> u8 {
+    fn try_read8(&self, address: u16) -> Option<u8> {
         match address {
-            0xff26 => self.master_control.bits,
+            0xff26 => Some(self.master_control.bits),
 
             //_ => panic!("Unmapped audio address: {:#06x}", address),
-            _ => 0,
+            _ => Some(0),
         }
+    }
+
+    fn read8(&self, address: u16) -> u8 {
+        self.try_read8(address)
+            .expect(&format!("Unmapped address: {:#06X}", address))
     }
 
     fn write8(&mut self, address: u16, value: u8) {

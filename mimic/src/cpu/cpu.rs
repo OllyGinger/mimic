@@ -31,7 +31,7 @@ impl CPU {
     // TODO: This should probably check if we're about to read
     // past the end of valid memory
     pub fn read_next_opcode(&self) -> OpcodeAndPrefix {
-        self.decode_opcode([
+        CPU::decode_opcode([
             self.mmu.read8(self.registers.pc()),
             self.mmu.read8(self.registers.pc() + 1),
             self.mmu.read8(self.registers.pc() + 2),
@@ -40,7 +40,7 @@ impl CPU {
     }
 
     // Currently only supports 0xCB prefix (fine for SM83 CPU)
-    pub fn decode_opcode(&self, data: [u8; 4]) -> OpcodeAndPrefix {
+    pub fn decode_opcode(data: [u8; 4]) -> OpcodeAndPrefix {
         let prefix_or_opcode = data[0];
         let mut prefix: Option<u8> = None;
         let mut args = data[1..3].try_into().unwrap();

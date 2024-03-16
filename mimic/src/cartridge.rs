@@ -97,16 +97,21 @@ fn parse_ram_size(val: u8) -> usize {
 impl Cartridge {}
 
 impl Memory for Cartridge {
-    fn read8(&self, address: u16) -> u8 {
+    fn try_read8(&self, address: u16) -> Option<u8> {
         // Read the boot rom if it exists
         if let Some(boot_rom_data) = &self.boot_rom_data {
             match address {
-                0x0000..=0x00ff => boot_rom_data[address as usize],
-                _ => self.mbc.read8(address),
+                0x0000..=0x00ff => Some(boot_rom_data[address as usize]),
+                _ => self.mbc.try_read8(address),
             }
         } else {
-            self.mbc.read8(address)
+            self.mbc.try_read8(address)
         }
+    }
+
+    fn read8(&self, address: u16) -> u8 {
+        self.try_read8(address)
+            .expect(&format!("Unmapped address: {:#06X}", address))
     }
 
     fn write8(&mut self, address: u16, value: u8) {

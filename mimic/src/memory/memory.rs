@@ -6,6 +6,7 @@ pub type MemoryRangeInclusive = RangeInclusive<usize>;
 
 pub trait Memory {
     fn read8(&self, address: u16) -> u8;
+    fn try_read8(&self, address: u16) -> Option<u8>;
     fn write8(&mut self, address: u16, value: u8);
 
     fn read16(&self, address: u16) -> u16 {

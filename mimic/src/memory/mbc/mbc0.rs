@@ -16,9 +16,14 @@ pub fn new(data: Vec<u8>) -> MBC0 {
 impl MBC0 {}
 
 impl Memory for MBC0 {
-    fn read8(&self, address: u16) -> u8 {
-        self.rom[address as usize]
+    fn try_read8(&self, address: u16) -> Option<u8> {
+        Some(self.rom[address as usize])
     }
+    fn read8(&self, address: u16) -> u8 {
+        self.try_read8(address)
+            .expect(&format!("Unmapped address: {:#06X}", address))
+    }
+
     fn write8(&mut self, address: u16, value: u8) {
         self.rom[address as usize] = value
     }

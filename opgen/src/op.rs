@@ -9,6 +9,7 @@ pub struct Op {
     pub mcycle_duration: u8,
     pub conditional_duration: bool,
     pub prefix: Option<u8>,
+    pub length: u8,
 
     pub tests: Option<Vec<EncodingTest>>,
 }
@@ -35,6 +36,7 @@ pub fn from_encoding_pattern(opcode: u32, encoding_pattern: &EncodingPattern) ->
         mcycle_duration: encoding_pattern.mcycle_duration,
         conditional_duration: encoding_pattern.conditional_duration,
         prefix: encoding_pattern.prefix,
+        length: encoding_pattern.length,
         tests: tests.clone(),
     }
 }

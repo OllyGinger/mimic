@@ -3,17 +3,20 @@ use std::rc::Rc;
 
 use crate::cartridge::{self};
 use crate::cpu::cpu::CPU;
+use crate::debugger::code_debugger::CodeDebugger;
 use crate::gpu::gpu::GPU;
-use crate::io;
 use crate::memory::mmu::MMU;
+use crate::{io, main_window};
 
 pub struct Emulator {
-    cpu: CPU,
+    pub cpu: CPU,
     gpu: Rc<RefCell<GPU>>,
+
+    code_debugger: CodeDebugger,
 }
 
 impl Emulator {
-    pub fn from_rom_path(boot_rom_path: Option<String>, rom_path: String) -> Self {
+    pub fn start(boot_rom_path: Option<String>, rom_path: String) {
         let rom_bytes = std::fs::read(rom_path).unwrap();
         let boot_rom_bytes: Option<Vec<u8>> = if let Some(path) = boot_rom_path {
             Some(std::fs::read(path).unwrap())
@@ -32,25 +35,24 @@ impl Emulator {
         mmu.add_interface(audio.clone());
 
         let cpu = CPU::new(mmu);
-        Emulator {
+        let mut em = Emulator {
             cpu,
             gpu: gpu.clone(),
-        }
+            code_debugger: CodeDebugger::new(),
+        };
+
+        let main_window = main_window::new("Mimic".to_string(), 2048, 1024);
+        let func = move |_run: &mut bool, ui: &mut imgui::Ui| {
+            em.draw(ui);
+        };
+
+        main_window.main_loop(func);
     }
 
-    pub fn run(&mut self) {
-        //let main_window = main_window::new("Mimic".to_string(), 2048, 1024);
-        //main_window.main_loop(|run, ui| {
-        //    let w = ui.window("hello world");
-        //    w.build(|| {
-        //        ui.text("Hello World!");
-        //        if ui.button("Exit") {
-        //            *run = false;
-        //        }
-        //    });
-        //});
-        loop {
-            self.cpu.tick();
-        }
+    pub fn run(&mut self) {}
+
+    fn draw(&mut self, ui: &mut imgui::Ui) {
+        let code_debugger = &mut self.code_debugger;
+        code_debugger.draw(ui, &self.cpu);
     }
 }

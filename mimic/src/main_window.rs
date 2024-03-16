@@ -3,6 +3,7 @@ use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::{Display, Surface};
+use imgui::*;
 use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::WinitPlatform;
@@ -28,15 +29,38 @@ pub fn new(title: String, width: u32, height: u32) -> MainWindow {
     let mut imgui = Context::create();
     imgui.set_ini_filename(None);
 
+    let mut font_config = FontConfig::default();
+    font_config.glyph_ranges = FontGlyphRanges::from_slice(&[0xe000, 0xf23b, 0]);
+    font_config.glyph_offset = [0.0, 2.0];
+    imgui.fonts().add_font(&[
+        FontSource::TtfData {
+            data: include_bytes!("../resources/RobotoMono-Regular.ttf"),
+            size_pixels: 17.0,
+            config: Some(FontConfig {
+                rasterizer_multiply: 1.5,
+                oversample_h: 4,
+                oversample_v: 4,
+                glyph_offset: [0.0, -1.0],
+                ..FontConfig::default()
+            }),
+        },
+        FontSource::TtfData {
+            data: include_bytes!("../resources/MaterialIcons-Regular.ttf"),
+            size_pixels: 15.0,
+            config: Some(font_config),
+        },
+    ]);
+
     let mut platform = WinitPlatform::init(&mut imgui);
     {
         let gl_window = display.gl_window();
         let window = gl_window.window();
 
-        let dpi_mode = imgui_winit_support::HiDpiMode::Default;
+        let dpi_mode = imgui_winit_support::HiDpiMode::Locked(1.0);
         platform.attach_window(imgui.io_mut(), window, dpi_mode);
     }
-    let renderer = Renderer::init(&mut imgui, &display).unwrap();
+    let mut renderer = Renderer::init(&mut imgui, &display).unwrap();
+    renderer.reload_font_texture(&mut imgui).unwrap();
 
     MainWindow {
         event_loop,

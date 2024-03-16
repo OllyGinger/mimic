@@ -58,15 +58,23 @@ impl MMU {
         self.add_interface(cart);
     }
 
-    pub fn read8(&self, address: u16) -> u8 {
+    pub fn try_read8(&self, address: u16) -> Option<u8> {
         match address {
-            0xff80..=0xfffe => self.hram[address as usize & 0x007f],
+            0xff80..=0xfffe => Some(self.hram[address as usize & 0x007f]),
             _ => {
-                let binding = self.get_mapped_interface(address);
-                let interface = binding.borrow();
-                interface.read8(address)
+                if let Some(binding) = self.try_get_mapped_interface(address) {
+                    let interface = binding.borrow();
+                    interface.try_read8(address)
+                } else {
+                    None
+                }
             }
         }
+    }
+
+    pub fn read8(&self, address: u16) -> u8 {
+        self.try_read8(address)
+            .expect(&format!("Unmapped address: {:#06X}", address))
     }
 
     pub fn write8(&mut self, address: u16, value: u8) {
@@ -91,24 +99,32 @@ impl MMU {
         self.write8(address + 1, ((value >> 8) & 0xFF) as u8);
     }
 
-    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn TickableMemory>> {
+    fn try_get_mapped_interface(&self, address: u16) -> Option<Rc<RefCell<dyn TickableMemory>>> {
         for (range, interface) in &self.interfaces {
             if address as usize >= range.0 && (address as usize) <= range.1 {
-                return interface.clone();
+                return Some(interface.clone());
             }
         }
 
-        // List out valid ranges
-        let valid_ranges = self
-            .interfaces
-            .keys()
-            .map(|(start, end)| format!("{:#06x}-{:#06x}", start, end))
-            .collect::<Vec<String>>();
-        panic!(
-            "Address is not mapped to MMU: {:#06x}\nMapped ranges:\n  {}",
-            address,
-            valid_ranges.join("\n  ")
-        );
+        None
+    }
+
+    fn get_mapped_interface(&self, address: u16) -> Rc<RefCell<dyn TickableMemory>> {
+        if let Some(interface) = self.try_get_mapped_interface(address) {
+            interface
+        } else {
+            // List out valid ranges
+            let valid_ranges = self
+                .interfaces
+                .keys()
+                .map(|(start, end)| format!("{:#06x}-{:#06x}", start, end))
+                .collect::<Vec<String>>();
+            panic!(
+                "Address is not mapped to MMU: {:#06x}\nMapped ranges:\n  {}",
+                address,
+                valid_ranges.join("\n  ")
+            );
+        }
     }
 }
 

@@ -181,21 +181,28 @@ impl GPU {
 }
 
 impl Memory for GPU {
-    fn read8(&self, address: u16) -> u8 {
+    fn try_read8(&self, address: u16) -> Option<u8> {
         match address {
-            0x8000..=0x9fff => self.vram[(self.vram_bank * 0x2000) | (address as usize & 0x1FFF)],
+            0x8000..=0x9fff => {
+                Some(self.vram[(self.vram_bank * 0x2000) | (address as usize & 0x1FFF)])
+            }
 
             // LCD Control
-            0xff40 => self.lcd_control.bits(),
-            0xff42 => self.scy,
-            0xff43 => self.scx,
-            0xFF44 => self.ly,
+            0xff40 => Some(self.lcd_control.bits()),
+            0xff42 => Some(self.scy),
+            0xff43 => Some(self.scx),
+            0xFF44 => Some(self.ly),
 
             // GPU Control
-            0xFF47 => self.bg_palette.get_bits(),
+            0xFF47 => Some(self.bg_palette.get_bits()),
 
-            _ => panic!("Unmapped GPU address: {:#06x}", address),
+            _ => None,
         }
+    }
+
+    fn read8(&self, address: u16) -> u8 {
+        self.try_read8(address)
+            .expect(&format!("Unmapped GPU address: {:#06X}", address))
     }
 
     fn write8(&mut self, address: u16, value: u8) {

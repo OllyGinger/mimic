@@ -2,6 +2,10 @@
 ## Overview
 This is another experimental emulator that will attempt to emulate a few different retro systems. The first system will be a Gameboy emulator that will use learnings from my OGBE project.
 
+## Todo
+### Disassembly
+-[ ] Handle negative relative jump opcode parameters (eg; JR)
+
 ## Inspirations
 * Z80 - https://floooh.github.io/2017/12/10/z80-emu-evolution.html
 
