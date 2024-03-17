@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use imgui::{
-    ListClipper, SelectableFlags, StyleColor, TableBgTarget, TableColumnFlags, TableColumnSetup,
-    TableFlags, WindowFlags,
+    ListClipper, StyleColor, TableBgTarget, TableColumnFlags, TableColumnSetup, TableFlags,
+    WindowFlags,
 };
 
 use super::colours::*;
@@ -63,7 +63,6 @@ impl CodeDebugger {
                     ui.table_next_column();
                     self.draw_debugger_control_box(ui, cpu);
                     self.draw_registers(ui, cpu);
-                    ui.text("hi");
                 }
             });
     }
@@ -74,7 +73,7 @@ impl CodeDebugger {
         }
 
         let flags = TableFlags::BORDERS_V | TableFlags::SCROLL_Y; //| TableFlags::RESIZABLE;
-
+        let mut is_pc_row_visible = false;
         if let Some(_t) = ui.begin_table_with_sizing("disassembly", 4, flags, [480.0, -1.0], 0.0) {
             ui.table_setup_column_with(TableColumnSetup {
                 init_width_or_weight: 20.0,
@@ -109,6 +108,7 @@ impl CodeDebugger {
                     && cpu.registers.pc() < *row_data.address_range.end();
                 if is_crrent_instruction_row {
                     ui.table_set_bg_color(TableBgTarget::ROW_BG0, COLOUR_DISASSEMBLY_ROW_PC);
+                    is_pc_row_visible = true;
                 }
 
                 // Highlight if this is a breakpoint
@@ -169,6 +169,20 @@ impl CodeDebugger {
                 ui.text(&row_data.instruction);
 
                 address_id.pop();
+            }
+
+            // If the PC row is outside our visible window, then scroll to it
+            if !is_pc_row_visible {
+                let mut idx = 0;
+                for row in &self.disassembly {
+                    if cpu.registers.pc() >= *row.address_range.start()
+                        && cpu.registers.pc() < *row.address_range.end()
+                    {
+                        ui.set_scroll_y(ui.text_line_height_with_spacing() * idx as f32);
+                    }
+
+                    idx += 1;
+                }
             }
         }
     }

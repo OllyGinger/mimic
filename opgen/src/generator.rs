@@ -389,7 +389,7 @@ impl Generator {
             "#[cfg(test)]
             mod tests {{
                 use crate::cpu::cpu::CPU;
-                use crate::memory::{{mmu::MMU, memory::Memory, test_memory}};
+                use crate::memory::{{mmu::MMU, test_memory}};
                 use std::rc::Rc;
                 use std::cell::RefCell;
                 

@@ -7,7 +7,6 @@ use imgui::*;
 use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::WinitPlatform;
-use std::ops::IndexMut;
 use std::time::Instant;
 
 pub struct MainWindow {
