@@ -6,6 +6,8 @@ use crate::int_utils::IntExt;
 pub struct CPU {
     pub registers: Registers,
     pub halt: bool,
+    broken_in_debugger: bool,
+    debug_single_step: bool,
     pub mmu: MMU,
 }
 
@@ -20,6 +22,8 @@ impl CPU {
         CPU {
             registers: Registers::new(),
             halt: false,
+            broken_in_debugger: true, // For now, just always start broken in debugger
+            debug_single_step: false,
             mmu: mmu,
         }
     }
@@ -28,14 +32,44 @@ impl CPU {
         self.halt = true;
     }
 
+    pub fn break_to_debugger(&mut self) {
+        self.broken_in_debugger = true;
+    }
+
+    pub fn resume_from_debugger(&mut self) {
+        self.broken_in_debugger = false
+    }
+
+    pub fn is_broken_to_debugger(&self) -> bool {
+        self.broken_in_debugger
+    }
+
+    pub fn debug_single_step(&mut self, single_step: bool) {
+        self.debug_single_step = single_step;
+        self.break_to_debugger();
+    }
+
+    pub fn wants_single_step(&self) -> bool {
+        self.debug_single_step
+    }
+
     // TODO: This should probably check if we're about to read
     // past the end of valid memory
     pub fn read_next_opcode(&self) -> OpcodeAndPrefix {
         CPU::decode_opcode([
             self.mmu.read8(self.registers.pc()),
-            self.mmu.read8(self.registers.pc() + 1),
-            self.mmu.read8(self.registers.pc() + 2),
-            self.mmu.read8(self.registers.pc() + 3),
+            self.mmu
+                .try_read8(self.registers.pc() + 1)
+                .or(Some(0x0))
+                .unwrap(),
+            self.mmu
+                .try_read8(self.registers.pc() + 2)
+                .or(Some(0x0))
+                .unwrap(),
+            self.mmu
+                .try_read8(self.registers.pc() + 2)
+                .or(Some(0x0))
+                .unwrap(),
         ])
     }
 
@@ -60,18 +94,7 @@ impl CPU {
         }
     }
 
-    pub fn pre_tick(&mut self) {
-        //println!(
-        //    "{:04X}: {}\t\t{}",
-        //    self.registers.pc(),
-        //    self.disassemble(self.read_next_opcode()),
-        //    self.registers
-        //);
-
-        if self.registers.pc() == 0x00e0 {
-            self.halt = true;
-        }
-    }
+    pub fn pre_tick(&mut self) {}
 
     pub fn post_tick(&mut self, mcycles: u32) {
         let cycles = (mcycles * 4) as u8;
