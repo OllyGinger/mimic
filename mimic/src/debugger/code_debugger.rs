@@ -16,6 +16,7 @@ pub struct CodeDebugger {
     disassembly: Vec<DisassemblyLine>,
 
     pub breakpoints: BTreeSet<u16>,
+    last_disassembly_scroll_address: u16,
 }
 
 impl CodeDebugger {
@@ -24,6 +25,7 @@ impl CodeDebugger {
             disassembly: Vec::new(),
 
             breakpoints: BTreeSet::new(),
+            last_disassembly_scroll_address: 0x00,
         }
     }
 
@@ -72,7 +74,7 @@ impl CodeDebugger {
             self.disassembly = Disassembler::new().disassemble(&cpu.mmu);
         }
 
-        let flags = TableFlags::BORDERS_V | TableFlags::SCROLL_Y; //| TableFlags::RESIZABLE;
+        let flags = TableFlags::BORDERS_V | TableFlags::SCROLL_Y;
         let mut is_pc_row_visible = false;
         if let Some(_t) = ui.begin_table_with_sizing("disassembly", 4, flags, [480.0, -1.0], 0.0) {
             ui.table_setup_column_with(TableColumnSetup {
@@ -172,13 +174,15 @@ impl CodeDebugger {
             }
 
             // If the PC row is outside our visible window, then scroll to it
-            if !is_pc_row_visible {
+            if !is_pc_row_visible && self.last_disassembly_scroll_address != cpu.registers.pc() {
                 let mut idx = 0;
                 for row in &self.disassembly {
                     if cpu.registers.pc() >= *row.address_range.start()
                         && cpu.registers.pc() < *row.address_range.end()
                     {
                         ui.set_scroll_y(ui.text_line_height_with_spacing() * idx as f32);
+                        self.last_disassembly_scroll_address = cpu.registers.pc();
+                        break;
                     }
 
                     idx += 1;
