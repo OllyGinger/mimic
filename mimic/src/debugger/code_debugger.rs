@@ -1,6 +1,8 @@
+use std::collections::BTreeSet;
+
 use imgui::{
-    ListClipper, StyleColor, TableBgTarget, TableColumnFlags, TableColumnSetup, TableFlags,
-    WindowFlags,
+    ListClipper, SelectableFlags, StyleColor, TableBgTarget, TableColumnFlags, TableColumnSetup,
+    TableFlags, WindowFlags,
 };
 
 use super::colours::*;
@@ -12,12 +14,16 @@ use material_symbols::Symbol::*;
 
 pub struct CodeDebugger {
     disassembly: Vec<DisassemblyLine>,
+
+    pub breakpoints: BTreeSet<u16>,
 }
 
 impl CodeDebugger {
     pub fn new() -> CodeDebugger {
         CodeDebugger {
             disassembly: Vec::new(),
+
+            breakpoints: BTreeSet::new(),
         }
     }
 
@@ -92,7 +98,10 @@ impl CodeDebugger {
             let clipper = ListClipper::new(self.disassembly.len() as i32).begin(&ui);
             for row_num in clipper.iter() {
                 let row_data = &self.disassembly[row_num as usize];
+                let row_start_addr = row_data.address_range.start();
+
                 ui.table_next_row();
+                let address_id = ui.push_id(format!("{}", row_data.address_range.start()));
 
                 // Highlight if this row is the current PC
                 let is_crrent_instruction_row = cpu.registers.pc()
@@ -100,6 +109,14 @@ impl CodeDebugger {
                     && cpu.registers.pc() < *row_data.address_range.end();
                 if is_crrent_instruction_row {
                     ui.table_set_bg_color(TableBgTarget::ROW_BG0, COLOUR_DISASSEMBLY_ROW_PC);
+                }
+
+                // Highlight if this is a breakpoint
+                if self.breakpoints.contains(row_start_addr) {
+                    ui.table_set_bg_color(
+                        TableBgTarget::ROW_BG0,
+                        COLOUR_DEBUGGER_CODE_BREAKPOINT_ROW,
+                    );
                 }
 
                 let bytes = row_data
@@ -111,6 +128,20 @@ impl CodeDebugger {
 
                 // Fill columns with data
                 ui.table_next_column();
+
+                let pos = ui.cursor_pos();
+                let breakpoint_cell_clicked = ui
+                    .selectable_config("##breakpoint_cell")
+                    .allow_double_click(true)
+                    .build();
+                if breakpoint_cell_clicked {
+                    if self.breakpoints.contains(row_start_addr) {
+                        self.breakpoints.remove(row_start_addr);
+                    } else {
+                        self.breakpoints.insert(*row_start_addr);
+                    }
+                }
+                ui.set_cursor_pos(pos);
                 if is_crrent_instruction_row {
                     ui.text_colored(
                         COLOUR_LIGHT_YELLOW,
@@ -119,12 +150,25 @@ impl CodeDebugger {
                 } else {
                     ui.text("");
                 }
+                ui.same_line();
+                if self.breakpoints.contains(row_start_addr) {
+                    ui.text_colored(
+                        COLOUR_DEBUGGER_CODE_BREAKPOINT,
+                        format!(
+                            "{}",
+                            material_symbols::Symbol::RadioButtonChecked.codepoint()
+                        ),
+                    );
+                }
+
                 ui.table_next_column();
                 ui.text(format!("{:#06x}", row_data.address_range.start()));
                 ui.table_next_column();
                 ui.text(bytes);
                 ui.table_next_column();
                 ui.text(&row_data.instruction);
+
+                address_id.pop();
             }
         }
     }
@@ -218,13 +262,13 @@ impl CodeDebugger {
             ui.table_next_column();
             ui.text("SP");
             ui.table_next_column();
-            ui.text(format!("{:#04X}", cpu.registers.sp()));
+            ui.text(format!("{:#06X}", cpu.registers.sp()));
 
             ui.table_next_row();
             ui.table_next_column();
             ui.text("PC");
             ui.table_next_column();
-            ui.text(format!("{:#04X}", cpu.registers.pc()));
+            ui.text(format!("{:#06X}", cpu.registers.pc()));
         }
     }
 }

@@ -71,6 +71,15 @@ impl Emulator {
             loop {
                 ticks += self.cpu.tick();
 
+                if self
+                    .code_debugger
+                    .breakpoints
+                    .contains(&self.cpu.registers.pc())
+                {
+                    self.cpu.break_to_debugger();
+                    break;
+                }
+
                 if ticks as u64 > available_ticks {
                     break;
                 }

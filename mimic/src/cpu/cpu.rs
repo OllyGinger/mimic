@@ -37,7 +37,8 @@ impl CPU {
     }
 
     pub fn resume_from_debugger(&mut self) {
-        self.broken_in_debugger = false
+        self.broken_in_debugger = false;
+        self.debug_single_step(false);
     }
 
     pub fn is_broken_to_debugger(&self) -> bool {
@@ -46,7 +47,9 @@ impl CPU {
 
     pub fn debug_single_step(&mut self, single_step: bool) {
         self.debug_single_step = single_step;
-        self.break_to_debugger();
+        if single_step {
+            self.break_to_debugger();
+        }
     }
 
     pub fn wants_single_step(&self) -> bool {

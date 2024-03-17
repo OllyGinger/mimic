@@ -365,13 +365,20 @@ impl Generator {
     }
 
     fn generate_instruction_len_match_arm(&self, file: &mut File, op: &Op) {
+        let mut len = op.length;
+
+        // If this op has a prefix, add another byte to the length
+        if let Some(_) = op.prefix {
+            len += 1;
+        }
+
         write!(
             file,
             "
         {:#04X} => {{
             Some({})
         }}",
-            op.opcode as u8, op.length
+            op.opcode as u8, len
         )
         .unwrap();
     }
