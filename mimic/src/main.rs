@@ -12,6 +12,7 @@ mod io;
 mod main_window;
 mod memory;
 mod tickable;
+mod utils;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

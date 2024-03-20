@@ -2,12 +2,17 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Instant;
 
+use glium::Display;
+use imgui::Ui;
+use imgui_glium_renderer::Renderer;
+
 use crate::cartridge::{self};
 use crate::cpu::cpu::CPU;
 use crate::debugger::code_debugger::CodeDebugger;
+use crate::debugger::tile_debug_view::TileDebugView;
 use crate::gpu::gpu::GPU;
 use crate::memory::mmu::MMU;
-use crate::{io, main_window};
+use crate::{io, main, main_window};
 
 pub struct Emulator {
     pub cpu: CPU,
@@ -15,6 +20,7 @@ pub struct Emulator {
 
     last_update: Instant,
     code_debugger: CodeDebugger,
+    tile_debug_view: TileDebugView,
 }
 
 impl Emulator {
@@ -37,23 +43,36 @@ impl Emulator {
         mmu.add_interface(audio.clone());
 
         let cpu = CPU::new(mmu);
+        let mut main_window = main_window::new("Mimic".to_string(), 2048, 1024);
+
         let mut em = Emulator {
             cpu,
             gpu: gpu.clone(),
 
             last_update: Instant::now(),
             code_debugger: CodeDebugger::new(),
+            tile_debug_view: TileDebugView::new(
+                main_window.display.clone(),
+                main_window.renderer.clone(),
+            ),
         };
 
-        let main_window = main_window::new("Mimic".to_string(), 2048, 1024);
-        let func = move |_run: &mut bool, ui: &mut imgui::Ui| {
-            em.update(ui);
-        };
-
-        main_window.main_loop(func);
+        main_window.main_loop(
+            move |keep_running: &mut bool,
+                  ui: &mut Ui,
+                  renderer: Rc<RefCell<Renderer>>,
+                  display: Rc<RefCell<glium::Display>>| {
+                em.update(ui, renderer, display);
+            },
+        );
     }
 
-    fn update(&mut self, ui: &mut imgui::Ui) {
+    fn update(
+        &mut self,
+        ui: &mut imgui::Ui,
+        renderer: Rc<RefCell<Renderer>>,
+        display: Rc<RefCell<glium::Display>>,
+    ) {
         let code_debugger = &mut self.code_debugger;
         code_debugger.draw(ui, &mut self.cpu);
 

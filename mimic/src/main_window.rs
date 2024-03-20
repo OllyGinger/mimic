@@ -7,14 +7,16 @@ use imgui::*;
 use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::WinitPlatform;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::time::Instant;
 
 pub struct MainWindow {
     event_loop: EventLoop<()>,
-    display: glium::Display,
+    pub display: Rc<RefCell<glium::Display>>,
     imgui: Context,
     platform: WinitPlatform,
-    renderer: Renderer,
+    pub renderer: Rc<RefCell<Renderer>>,
 }
 
 pub fn new(title: String, width: u32, height: u32) -> MainWindow {
@@ -156,21 +158,26 @@ pub fn new(title: String, width: u32, height: u32) -> MainWindow {
 
     MainWindow {
         event_loop,
-        display,
+        display: Rc::new(RefCell::new(display)),
         imgui,
         platform,
-        renderer,
+        renderer: Rc::new(RefCell::new(renderer)),
     }
 }
 
 impl MainWindow {
-    pub fn main_loop<F: FnMut(&mut bool, &mut Ui) + 'static>(self, mut run_ui: F) {
+    pub fn main_loop<
+        F: FnMut(&mut bool, &mut Ui, Rc<RefCell<Renderer>>, Rc<RefCell<Display>>) + 'static,
+    >(
+        self,
+        mut run_ui: F,
+    ) {
         let MainWindow {
             event_loop,
             display,
             mut imgui,
             mut platform,
-            mut renderer,
+            renderer,
             ..
         } = self;
         let mut last_frame = Instant::now();
@@ -182,7 +189,8 @@ impl MainWindow {
                 last_frame = now;
             }
             Event::MainEventsCleared => {
-                let gl_window = display.gl_window();
+                let display_ref = display.borrow();
+                let gl_window = display_ref.gl_window();
                 platform
                     .prepare_frame(imgui.io_mut(), gl_window.window())
                     .expect("Failed to prepare frame");
@@ -192,17 +200,19 @@ impl MainWindow {
                 let ui = imgui.frame();
 
                 let mut run = true;
-                run_ui(&mut run, ui);
+                run_ui(&mut run, ui, renderer.clone(), display.clone());
                 if !run {
                     *control_flow = ControlFlow::Exit;
                 }
 
-                let gl_window = display.gl_window();
-                let mut target = display.draw();
+                let display_ref = display.borrow();
+                let gl_window = display_ref.gl_window();
+                let mut target = display.borrow().draw();
+                let mut renderer_ref = renderer.borrow_mut();
                 target.clear_color(0.05, 0.066, 0.09, 1.0);
                 platform.prepare_render(ui, gl_window.window());
                 let draw_data = imgui.render();
-                renderer
+                renderer_ref
                     .render(&mut target, draw_data)
                     .expect("Rendering failed");
                 target.finish().expect("Failed to swap buffers");
@@ -212,7 +222,8 @@ impl MainWindow {
                 ..
             } => *control_flow = ControlFlow::Exit,
             event => {
-                let gl_window = display.gl_window();
+                let display_ref = display.borrow();
+                let gl_window = display_ref.gl_window();
                 platform.handle_event(imgui.io_mut(), gl_window.window(), &event);
             }
         })

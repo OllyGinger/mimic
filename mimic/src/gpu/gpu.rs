@@ -1,7 +1,11 @@
-use super::palette::Palette;
+use super::{
+    palette::{Palette, PaletteColour},
+    PixelColour, TILE_SIZE,
+};
 use crate::{
     memory::memory::{Memory, MemoryRangeInclusive},
     tickable::Tickable,
+    utils,
 };
 use bitflags::bitflags;
 
@@ -177,6 +181,40 @@ impl GPU {
         } {
             //self.interrupt |= 0x02; // Stat interrrupt
         }
+    }
+
+    pub fn get_bg_tile_as_pixels(
+        self: &GPU,
+        tile_num: u16,
+    ) -> [PixelColour; TILE_SIZE * TILE_SIZE] {
+        let mut tile_data = [(0, 0, 0); TILE_SIZE * TILE_SIZE];
+        let mut address = (0x8000_u16 + (tile_num as u16 * (TILE_SIZE * 2) as u16)) as u16;
+
+        for y in 0..TILE_SIZE {
+            let row_data = utils::from_u16(self.read16(address));
+            for x in 0..TILE_SIZE {
+                let mask = 0x80 >> x;
+                let a = if ((row_data[0] & mask) as u8) > 0 {
+                    1
+                } else {
+                    0
+                };
+                let b = if ((row_data[1] & mask) as u8) > 0 {
+                    1
+                } else {
+                    0
+                };
+                let val = ((b << 1) | a) as u8;
+
+                // TODO: Only uses BG palette
+                tile_data[TILE_SIZE * y + x] =
+                    self.bg_palette.get_pixel_color(PaletteColour::from_u8(val));
+            }
+
+            address += 2;
+        }
+
+        tile_data
     }
 }
 
