@@ -32,12 +32,11 @@ impl CodeDebugger {
     pub fn draw(&mut self, ui: &mut imgui::Ui, cpu: &mut CPU) {
         let window = ui.window("Code Debugger");
         window
-            .position([0.0, 0.0], imgui::Condition::Always)
+            .position([0.0, 0.0], imgui::Condition::FirstUseEver)
             .flags(
                 WindowFlags::NO_SCROLLBAR
                     | WindowFlags::NO_SCROLL_WITH_MOUSE
-                    | WindowFlags::NO_COLLAPSE
-                    | WindowFlags::NO_RESIZE,
+                    | WindowFlags::NO_COLLAPSE,
             )
             //.size([560.0, ui.window_size()[1] * 2.5], imgui::Condition::Always)
             .build(|| {

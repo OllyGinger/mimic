@@ -23,6 +23,7 @@ pub fn register_texture(texture: Rc<Texture2d>, renderer: Rc<RefCell<Renderer>>)
         })
 }
 
+#[inline]
 pub fn superimpose<T, const LHS_SIZE: usize, const RHS_SIZE: usize>(
     lhs: &mut [T; LHS_SIZE],
     range: Range<usize>,
@@ -37,6 +38,7 @@ pub fn superimpose<T, const LHS_SIZE: usize, const RHS_SIZE: usize>(
     }
 }
 
+#[inline]
 pub fn from_u16(v: u16) -> [u8; 2] {
     let mut ret: [u8; 2] = [0, 0];
     ret[0] = (v & 0x00ff) as u8;

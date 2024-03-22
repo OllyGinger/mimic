@@ -78,6 +78,20 @@ impl Emulator {
         renderer: Rc<RefCell<Renderer>>,
         _display: Rc<RefCell<glium::Display>>,
     ) {
+        if let Some(_menu_bar) = ui.begin_main_menu_bar() {
+            if let Some(file_menu) = ui.begin_menu("File") {
+                if ui.menu_item("Quit") {
+                    std::process::exit(0);
+                }
+                file_menu.end();
+            }
+
+            if let Some(edit_menu) = ui.begin_menu("File") {
+                if ui.menu_item("Save window layout") {}
+                edit_menu.end();
+            }
+        }
+
         let code_debugger = &mut self.code_debugger;
         code_debugger.draw(ui, &mut self.cpu);
 

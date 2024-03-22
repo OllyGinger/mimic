@@ -216,6 +216,14 @@ impl GPU {
 
         tile_data
     }
+
+    pub fn get_scx(self: &GPU) -> u8 {
+        self.scx
+    }
+
+    pub fn get_scy(self: &GPU) -> u8 {
+        self.scy
+    }
 }
 
 impl Memory for GPU {

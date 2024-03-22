@@ -100,6 +100,79 @@ impl TileMapDebugView {
         });
     }
 
+    fn draw_screen_rectangle(
+        self: &TileMapDebugView,
+        gpu: &GPU,
+        buffer: &mut [gpu::PixelColour;
+                 Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize],
+    ) {
+        // Draw rectangle around screen viewport represented by SCX and SCY
+        let viewport_x = gpu.get_scx() as usize;
+        let viewport_y = gpu.get_scy() as usize;
+        let viewport_width = gpu::LCD_SCREEN_WIDTH;
+        let viewport_height = gpu::LCD_SCREEN_HEIGHT;
+
+        // Draw rectangle within texture bounds
+        let rect_top = viewport_y;
+        let rect_bottom = viewport_y + viewport_height - 1;
+        let rect_left = viewport_x;
+        let rect_right = viewport_x + viewport_width - 1;
+
+        // Draw top and bottom lines within texture bounds
+        for row in [rect_top, rect_bottom].iter() {
+            let range = Self::get_texture_range(rect_left, *row, viewport_width, 1);
+            let line: [gpu::PixelColour; gpu::LCD_SCREEN_WIDTH] =
+                [(255u8, 0u8, 0u8); gpu::LCD_SCREEN_WIDTH];
+            utils::superimpose(buffer, range, &line);
+        }
+
+        // Draw left and right lines within texture bounds
+        for col in [rect_left, rect_right].iter() {
+            for row in rect_top..=rect_bottom {
+                let range = Self::get_texture_range(*col, row, 1, 1);
+                let pixel: [gpu::PixelColour; 1] = [(255u8, 0u8, 0u8); 1];
+                utils::superimpose(buffer, range, &pixel);
+            }
+        }
+
+        // Draw rectangle portions that wrap around the edges of the texture
+        if rect_top > rect_bottom {
+            // Draw top portion
+            let top_range = Self::get_texture_range(rect_left, 0, viewport_width, rect_top + 1);
+            let top_line: [gpu::PixelColour; gpu::LCD_SCREEN_WIDTH] =
+                [(255u8, 0u8, 0u8); gpu::LCD_SCREEN_WIDTH];
+            utils::superimpose(buffer, top_range, &top_line);
+
+            // Draw bottom portion
+            let bottom_range = Self::get_texture_range(
+                rect_left,
+                rect_bottom,
+                viewport_width,
+                Self::TEXTURE_HEIGHT,
+            );
+            let bottom_line: [gpu::PixelColour; gpu::LCD_SCREEN_WIDTH] =
+                [(255u8, 0u8, 0u8); gpu::LCD_SCREEN_WIDTH];
+            utils::superimpose(buffer, bottom_range, &bottom_line);
+        }
+
+        if rect_left > rect_right {
+            // Draw left portion
+            let left_range = Self::get_texture_range(0, rect_top, rect_left + 1, viewport_height);
+            for _row in rect_top..=rect_bottom {
+                let pixel: [gpu::PixelColour; 1] = [(255u8, 0u8, 0u8); 1];
+                utils::superimpose(buffer, left_range.clone(), &pixel);
+            }
+
+            // Draw right portion
+            let right_range =
+                Self::get_texture_range(rect_right, rect_top, Self::TEXTURE_WIDTH, viewport_height);
+            for _row in rect_top..=rect_bottom {
+                let pixel: [gpu::PixelColour; 1] = [(255u8, 0u8, 0u8); 1];
+                utils::superimpose(buffer, right_range.clone(), &pixel);
+            }
+        }
+    }
+
     fn draw_tile_map(
         self: &TileMapDebugView,
         gpu: &GPU,
@@ -133,12 +206,20 @@ impl TileMapDebugView {
                 }
             }
         }
+
+        // Draw screen rectangle
+        if self.scyx_enabled {
+            self.draw_screen_rectangle(gpu, buffer);
+        }
     }
 
     fn get_texture_range(x: usize, y: usize, width: usize, height: usize) -> Range<usize> {
         let start = Self::TEXTURE_WIDTH as usize * y as usize + x as usize;
         let end = start + (width * height);
 
-        start..end
+        let max_index = Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize;
+        let end_clamped = end.min(max_index); // Clamp end index to maximum length
+
+        start..end_clamped
     }
 }

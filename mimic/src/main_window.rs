@@ -29,7 +29,7 @@ pub fn new(title: String, width: u32, height: u32) -> MainWindow {
         Display::new(builder, context, &event_loop).expect("Failed to initialize display");
 
     let mut imgui = Context::create();
-    imgui.set_ini_filename(None);
+    imgui.set_ini_filename(Some("imgui.ini".into()));
 
     imgui.fonts().add_font(&[
         FontSource::TtfData {

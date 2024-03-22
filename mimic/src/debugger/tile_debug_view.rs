@@ -46,40 +46,42 @@ impl TileDebugView {
     }
 
     pub fn draw(self: &mut TileDebugView, renderer: Rc<RefCell<Renderer>>, ui: &mut Ui, gpu: &GPU) {
-        ui.window("Tile Debug View (VRam)").build(|| {
-            let mut buffer: [gpu::PixelColour;
-                Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize] =
-                [(255u8, 255u8, 255u8);
-                    Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize];
+        ui.window("Tile Debug View (VRam)")
+            .position([600.0, 0.0], imgui::Condition::FirstUseEver)
+            .build(|| {
+                let mut buffer: [gpu::PixelColour;
+                    Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize] =
+                    [(255u8, 255u8, 255u8);
+                        Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize];
 
-            // Draw out the tile map
-            self.draw_tile_map(gpu, &mut buffer);
-            self.pixel_buffer.write(&buffer[..]);
+                // Draw out the tile map
+                self.draw_tile_map(gpu, &mut buffer);
+                self.pixel_buffer.write(&buffer[..]);
 
-            let mut renderer_ref = renderer.borrow_mut();
-            renderer_ref
-                .textures()
-                .get(self.texture_id.unwrap())
-                .unwrap()
-                .texture
-                .mipmap(0)
-                .unwrap()
-                .raw_upload_from_pixel_buffer(
-                    self.pixel_buffer.as_slice(),
-                    0..Self::TEXTURE_WIDTH as u32,
-                    0..Self::TEXTURE_HEIGHT as u32,
-                    0..1,
+                let mut renderer_ref = renderer.borrow_mut();
+                renderer_ref
+                    .textures()
+                    .get(self.texture_id.unwrap())
+                    .unwrap()
+                    .texture
+                    .mipmap(0)
+                    .unwrap()
+                    .raw_upload_from_pixel_buffer(
+                        self.pixel_buffer.as_slice(),
+                        0..Self::TEXTURE_WIDTH as u32,
+                        0..Self::TEXTURE_HEIGHT as u32,
+                        0..1,
+                    );
+
+                let img = imgui::Image::new(
+                    self.texture_id.unwrap(),
+                    [
+                        Self::TEXTURE_WIDTH as f32 * 2.0,
+                        Self::TEXTURE_HEIGHT as f32 * 2.0,
+                    ],
                 );
-
-            let img = imgui::Image::new(
-                self.texture_id.unwrap(),
-                [
-                    Self::TEXTURE_WIDTH as f32 * 2.0,
-                    Self::TEXTURE_HEIGHT as f32 * 2.0,
-                ],
-            );
-            img.build(ui);
-        });
+                img.build(ui);
+            });
     }
 
     fn draw_tile_map(
