@@ -1,8 +1,10 @@
 use super::{
     palette::{Palette, PaletteColour},
-    PixelColour, TILE_SIZE,
+    BackBufferTexture, PixelColour, BACK_BUFFER_TILES_WIDE, FRAME_BUFFER_TEXTURE_HEIGHT,
+    FRAME_BUFFER_TEXTURE_WIDTH, LCD_SCREEN_WIDTH, TILE_SIZE,
 };
 use crate::{
+    int_utils::IntExt,
     memory::memory::{Memory, MemoryRangeInclusive},
     tickable::Tickable,
     utils,
@@ -97,12 +99,13 @@ pub struct GPU {
 
     // Internals
     mapped_ranges: Vec<MemoryRangeInclusive>,
+    back_buffer: BackBufferTexture, // Used to draw the screen line by line
     current_window_line: i32, // The line which the window is rendering so it can continue if the pos is changed
 }
 
 impl GPU {
     pub fn new() -> GPU {
-        GPU {
+        let mut gpu = GPU {
             mode: Mode::AccessOAM,
             cycles: 0,
 
@@ -129,9 +132,14 @@ impl GPU {
                 0x8000..=0x9FFF, // VRam
                 0xFF40..=0xFF4B, // GPU/LCD Control
             ],
-
+            back_buffer: [(0u8, 0u8, 0u8);
+                FRAME_BUFFER_TEXTURE_HEIGHT * FRAME_BUFFER_TEXTURE_WIDTH],
             current_window_line: 0,
-        }
+        };
+
+        gpu.back_buffer
+            .fill(gpu.bg_palette.get_pixel_color(PaletteColour::White));
+        gpu
     }
 
     pub fn set_lcd_control(&mut self, control: u8) {
@@ -155,6 +163,79 @@ impl GPU {
         }
 
         self.lcd_control = new_control;
+    }
+
+    fn scanline(self: &mut GPU) {
+        if !self.lcd_control.contains(LCDControl::LCD_ON) {
+            self.back_buffer
+                .fill(self.bg_palette.get_pixel_color(PaletteColour::White));
+            return;
+        }
+
+        // Check if the background is enabled, if not then the
+        // background should just be white
+        if self.lcd_control.contains(LCDControl::BG_ON) {
+            self.draw_bg_scanline();
+        }
+
+        //if self.lcd_control.contains(LCDControl::WINDOW_ON) {
+        //    self.draw_window_scanline();
+        //}
+        //
+        //if self.lcd_control.contains(LCDControl::OBJ_ON) {
+        //    self.draw_sprites_scanline();
+        //}
+    }
+
+    // Draw the background to the backbuffer. This is done
+    // once per HSync. By the time we get to the VSync this
+    // whole screen should be drawn
+    fn draw_bg_scanline(self: &mut GPU) {
+        let slice_start = LCD_SCREEN_WIDTH * self.ly as usize;
+        let slice_end = LCD_SCREEN_WIDTH + slice_start;
+
+        let mut tile_data_base: u16 = if self.lcd_control.contains(LCDControl::BG_ADDR) {
+            0x8000
+        } else {
+            0x9000
+        };
+
+        // Pick the addressing mode
+        let tile_map_base: u16 = if self.lcd_control.contains(LCDControl::BG_MAP) {
+            0x9C00
+        } else {
+            0x9800
+        };
+
+        let addr_mode_8000 = tile_data_base == 0x8000;
+        let palette = &self.bg_palette;
+        let y = self.ly.wrapping_add(self.scy);
+        let row = (y / 8) as usize;
+        for i in 0..LCD_SCREEN_WIDTH {
+            let x = (i as u8).wrapping_add(self.scx);
+            let col = (x / 8) as usize;
+
+            // Read which tile sits at this position in vram
+            let tile_index = self
+                .read8(tile_map_base + ((BACK_BUFFER_TILES_WIDE as u16 * row as u16) + col as u16));
+
+            // Shift the memory base back to 0x8000 to reference the second block of tiles
+            if !addr_mode_8000 && tile_index >= 128 {
+                tile_data_base = 0x8000;
+            }
+
+            // Read the specific pixel from the tile data
+            let mut tile_pixel_data_address =
+                tile_data_base + (tile_index as u16 * (TILE_SIZE * 2) as u16);
+            tile_pixel_data_address += ((y as u8 % TILE_SIZE as u8) * 2) as u16;
+            let tile_data = utils::from_u16(self.read16(tile_pixel_data_address));
+            let bit = (x % 8).wrapping_sub(7).wrapping_mul(0xff) as usize;
+
+            let colour_idx = ((tile_data[1] as u8).bit(bit) << 1) | (tile_data[0] as u8).bit(bit);
+
+            let pixels = &mut self.back_buffer[slice_start..slice_end];
+            pixels[i] = palette.get_pixel_color(PaletteColour::from_u8(colour_idx));
+        }
     }
 
     fn change_mode(self: &mut GPU, mode: Mode) {
@@ -224,6 +305,10 @@ impl GPU {
     pub fn get_scy(self: &GPU) -> u8 {
         self.scy
     }
+
+    pub fn get_back_buffer(&self) -> &BackBufferTexture {
+        &self.back_buffer
+    }
 }
 
 impl Memory for GPU {
@@ -286,7 +371,7 @@ impl Tickable for GPU {
         match self.mode {
             Mode::AccessOAM => self.change_mode(Mode::AccessVRam),
             Mode::AccessVRam => {
-                // Draw scanline
+                self.scanline();
                 self.change_mode(Mode::HBlank);
             }
             Mode::HBlank => {

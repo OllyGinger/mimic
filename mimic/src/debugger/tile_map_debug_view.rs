@@ -48,12 +48,7 @@ impl TileMapDebugView {
         view
     }
 
-    pub fn draw(
-        self: &mut TileMapDebugView,
-        renderer: Rc<RefCell<Renderer>>,
-        ui: &mut Ui,
-        gpu: &GPU,
-    ) {
+    pub fn draw(&mut self, renderer: Rc<RefCell<Renderer>>, ui: &mut Ui, gpu: &GPU) {
         let mut buffer: [gpu::PixelColour;
             Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize] =
             [(255u8, 255u8, 255u8); Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize];

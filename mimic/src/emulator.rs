@@ -11,6 +11,7 @@ use crate::debugger::code_debugger::CodeDebugger;
 use crate::debugger::tile_debug_view::TileDebugView;
 use crate::debugger::tile_map_debug_view::TileMapDebugView;
 use crate::gpu::gpu::GPU;
+use crate::io::lcd_view::LCDView;
 use crate::memory::mmu::MMU;
 use crate::{io, main_window};
 
@@ -22,6 +23,8 @@ pub struct Emulator {
     code_debugger: CodeDebugger,
     tile_debug_view: TileDebugView,
     tile_map_debug_view: TileMapDebugView,
+
+    lcd_view: LCDView,
 }
 
 impl Emulator {
@@ -60,6 +63,8 @@ impl Emulator {
                 main_window.display.clone(),
                 main_window.renderer.clone(),
             ),
+
+            lcd_view: LCDView::new(main_window.display.clone(), main_window.renderer.clone()),
         };
 
         main_window.main_loop(
@@ -100,6 +105,9 @@ impl Emulator {
 
         let tile_map_debug_view = &mut self.tile_map_debug_view;
         tile_map_debug_view.draw(renderer.clone(), ui, &self.gpu.borrow());
+
+        let lcd_view = &mut self.lcd_view;
+        lcd_view.draw(renderer.clone(), ui, &self.gpu.borrow());
 
         self.tick_cpu();
     }

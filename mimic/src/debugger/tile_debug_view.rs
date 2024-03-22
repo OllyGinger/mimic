@@ -45,7 +45,7 @@ impl TileDebugView {
         view
     }
 
-    pub fn draw(self: &mut TileDebugView, renderer: Rc<RefCell<Renderer>>, ui: &mut Ui, gpu: &GPU) {
+    pub fn draw(&mut self, renderer: Rc<RefCell<Renderer>>, ui: &mut Ui, gpu: &GPU) {
         ui.window("Tile Debug View (VRam)")
             .position([600.0, 0.0], imgui::Condition::FirstUseEver)
             .build(|| {
