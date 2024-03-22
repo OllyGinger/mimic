@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Instant;
 
-use glium::Display;
 use imgui::Ui;
 use imgui_glium_renderer::Renderer;
 
@@ -10,9 +9,10 @@ use crate::cartridge::{self};
 use crate::cpu::cpu::CPU;
 use crate::debugger::code_debugger::CodeDebugger;
 use crate::debugger::tile_debug_view::TileDebugView;
+use crate::debugger::tile_map_debug_view::TileMapDebugView;
 use crate::gpu::gpu::GPU;
 use crate::memory::mmu::MMU;
-use crate::{io, main, main_window};
+use crate::{io, main_window};
 
 pub struct Emulator {
     pub cpu: CPU,
@@ -21,6 +21,7 @@ pub struct Emulator {
     last_update: Instant,
     code_debugger: CodeDebugger,
     tile_debug_view: TileDebugView,
+    tile_map_debug_view: TileMapDebugView,
 }
 
 impl Emulator {
@@ -43,7 +44,7 @@ impl Emulator {
         mmu.add_interface(audio.clone());
 
         let cpu = CPU::new(mmu);
-        let mut main_window = main_window::new("Mimic".to_string(), 2048, 1024);
+        let main_window = main_window::new("Mimic".to_string(), 2048, 1024);
 
         let mut em = Emulator {
             cpu,
@@ -55,10 +56,14 @@ impl Emulator {
                 main_window.display.clone(),
                 main_window.renderer.clone(),
             ),
+            tile_map_debug_view: TileMapDebugView::new(
+                main_window.display.clone(),
+                main_window.renderer.clone(),
+            ),
         };
 
         main_window.main_loop(
-            move |keep_running: &mut bool,
+            move |_keep_running: &mut bool,
                   ui: &mut Ui,
                   renderer: Rc<RefCell<Renderer>>,
                   display: Rc<RefCell<glium::Display>>| {
@@ -71,10 +76,16 @@ impl Emulator {
         &mut self,
         ui: &mut imgui::Ui,
         renderer: Rc<RefCell<Renderer>>,
-        display: Rc<RefCell<glium::Display>>,
+        _display: Rc<RefCell<glium::Display>>,
     ) {
         let code_debugger = &mut self.code_debugger;
         code_debugger.draw(ui, &mut self.cpu);
+
+        let tile_debug_view = &mut self.tile_debug_view;
+        tile_debug_view.draw(renderer.clone(), ui, &self.gpu.borrow());
+
+        let tile_map_debug_view = &mut self.tile_map_debug_view;
+        tile_map_debug_view.draw(renderer.clone(), ui, &self.gpu.borrow());
 
         self.tick_cpu();
     }

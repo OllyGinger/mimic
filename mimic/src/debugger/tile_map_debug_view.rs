@@ -6,30 +6,33 @@ use imgui_glium_renderer::Renderer;
 
 use crate::{
     gpu::{self, gpu::GPU},
+    memory::memory::Memory,
     utils,
 };
 
-pub struct TileDebugView {
+pub struct TileMapDebugView {
     pixel_buffer: PixelBuffer<(u8, u8, u8)>,
     texture_id: Option<TextureId>,
+
+    tile_map_base: u16,
+    scyx_enabled: bool,
 }
 
-impl TileDebugView {
-    const TILES_WIDE: usize = 16;
-    const TILES_HIGH: usize = 24;
+impl TileMapDebugView {
+    const TEXTURE_WIDTH: usize = gpu::TILE_SIZE * gpu::BACK_BUFFER_TILES_WIDE;
+    const TEXTURE_HEIGHT: usize = gpu::TILE_SIZE * gpu::BACK_BUFFER_TILES_HIGH;
 
-    const TEXTURE_WIDTH: usize = gpu::TILE_SIZE * Self::TILES_WIDE;
-    const TEXTURE_HEIGHT: usize = gpu::TILE_SIZE * Self::TILES_HIGH;
-
-    pub fn new(facade: Rc<RefCell<Display>>, renderer: Rc<RefCell<Renderer>>) -> TileDebugView {
+    pub fn new(facade: Rc<RefCell<Display>>, renderer: Rc<RefCell<Renderer>>) -> TileMapDebugView {
         let facade_ref: &RefCell<Display> = facade.borrow();
         let facade_refref: &Display = &facade_ref.borrow();
-        let mut view = TileDebugView {
+        let mut view = TileMapDebugView {
             pixel_buffer: glium::texture::pixel_buffer::PixelBuffer::new_empty(
                 facade_refref,
                 Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize,
             ),
             texture_id: None,
+            tile_map_base: 0x9800,
+            scyx_enabled: true,
         };
 
         let tex2d = Texture2d::empty_with_format(
@@ -45,13 +48,17 @@ impl TileDebugView {
         view
     }
 
-    pub fn draw(self: &mut TileDebugView, renderer: Rc<RefCell<Renderer>>, ui: &mut Ui, gpu: &GPU) {
-        ui.window("Tile Debug View (VRam)").build(|| {
-            let mut buffer: [gpu::PixelColour;
-                Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize] =
-                [(255u8, 255u8, 255u8);
-                    Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize];
+    pub fn draw(
+        self: &mut TileMapDebugView,
+        renderer: Rc<RefCell<Renderer>>,
+        ui: &mut Ui,
+        gpu: &GPU,
+    ) {
+        let mut buffer: [gpu::PixelColour;
+            Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize] =
+            [(255u8, 255u8, 255u8); Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize];
 
+        ui.window("VRam Tile Map Viewer").build(|| {
             // Draw out the tile map
             self.draw_tile_map(gpu, &mut buffer);
             self.pixel_buffer.write(&buffer[..]);
@@ -71,6 +78,17 @@ impl TileDebugView {
                     0..1,
                 );
 
+            ui.text("Map Base:");
+            ui.same_line();
+            if ui.radio_button_bool("0x9800", self.tile_map_base == 0x9800) {
+                self.tile_map_base = 0x9800;
+            }
+            ui.same_line();
+            if ui.radio_button_bool("0x9C00", self.tile_map_base == 0x9C00) {
+                self.tile_map_base = 0x9C00;
+            }
+            ui.checkbox("scyc", &mut self.scyx_enabled);
+
             let img = imgui::Image::new(
                 self.texture_id.unwrap(),
                 [
@@ -83,16 +101,19 @@ impl TileDebugView {
     }
 
     fn draw_tile_map(
-        self: &TileDebugView,
+        self: &TileMapDebugView,
         gpu: &GPU,
         buffer: &mut [gpu::PixelColour;
                  Self::TEXTURE_WIDTH as usize * Self::TEXTURE_HEIGHT as usize],
     ) {
         // Draw tiles
-        let mut tile_num = 0u16;
-        for tile_y in 0..Self::TILES_HIGH {
-            for tile_x in 0..Self::TILES_WIDE {
-                let tile_buffer = gpu.get_bg_tile_as_pixels(tile_num);
+        for tile_y in 0..gpu::BACK_BUFFER_TILES_HIGH {
+            for tile_x in 0..gpu::BACK_BUFFER_TILES_WIDE {
+                let tile_index = gpu.read8(
+                    self.tile_map_base
+                        + (gpu::BACK_BUFFER_TILES_WIDE as u16 * tile_y as u16 + tile_x as u16),
+                );
+                let tile_buffer = gpu.get_bg_tile_as_pixels(tile_index as u16);
 
                 // Copy the current tile into the buffer
                 let x_pixel = tile_x * (gpu::TILE_SIZE);
@@ -110,9 +131,6 @@ impl TileDebugView {
 
                     utils::superimpose(buffer, dest_range, &row);
                 }
-
-                // Keep track of the tile we're reading
-                tile_num += 1;
             }
         }
     }

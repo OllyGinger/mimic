@@ -24,7 +24,7 @@ pub fn register_texture(texture: Rc<Texture2d>, renderer: Rc<RefCell<Renderer>>)
 }
 
 pub fn superimpose<T, const LHS_SIZE: usize, const RHS_SIZE: usize>(
-    mut lhs: &mut [T; LHS_SIZE],
+    lhs: &mut [T; LHS_SIZE],
     range: Range<usize>,
     rhs: &[T; RHS_SIZE],
 ) where
