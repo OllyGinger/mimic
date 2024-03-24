@@ -46,6 +46,15 @@ impl Emulator {
         let audio = Rc::new(RefCell::new(io::audio::Audio::new()));
         mmu.add_interface(audio.clone());
 
+        let serial = Rc::new(RefCell::new(io::serial::Serial::new()));
+        mmu.add_interface(serial.clone());
+
+        let timer = Rc::new(RefCell::new(io::timer::Timer::new()));
+        mmu.add_interface(timer.clone());
+
+        let keypad = Rc::new(RefCell::new(io::keypad::Keypad::new()));
+        mmu.add_interface(keypad.clone());
+
         let cpu = CPU::new(mmu);
         let main_window = main_window::new("Mimic".to_string(), 2048, 1024);
 

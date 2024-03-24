@@ -9,7 +9,10 @@ pub fn new(data: Vec<u8>) -> MBC0 {
     let data_len = data.len();
     MBC0 {
         rom: data,
-        mapped_ranges: vec![0x0000..=data_len - 1],
+        mapped_ranges: vec![
+            0x0000..=data_len - 1,
+            0xff50..=0xff50, // Boot rom enable
+        ],
     }
 }
 

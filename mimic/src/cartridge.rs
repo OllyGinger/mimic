@@ -26,6 +26,7 @@ pub struct Cartridge {
     pub header: Header,
     pub mbc: Box<dyn Memory>,
     pub boot_rom_data: Option<Vec<u8>>,
+    pub boot_rom_enabled: bool,
 }
 
 pub fn new(boot_rom_data: Option<Vec<u8>>, cart_data: Vec<u8>) -> Cartridge {
@@ -35,6 +36,7 @@ pub fn new(boot_rom_data: Option<Vec<u8>>, cart_data: Vec<u8>) -> Cartridge {
         header: header,
         mbc: mbc,
         boot_rom_data: boot_rom_data.clone(),
+        boot_rom_enabled: boot_rom_data.is_some(),
     }
 }
 
@@ -98,10 +100,21 @@ impl Cartridge {}
 
 impl Memory for Cartridge {
     fn try_read8(&self, address: u16) -> Option<u8> {
+        match address {
+            0xff50 => {
+                if self.boot_rom_enabled {
+                    return Some(0x00);
+                } else {
+                    return Some(0x01);
+                }
+            }
+            _ => {}
+        }
+
         // Read the boot rom if it exists
         if let Some(boot_rom_data) = &self.boot_rom_data {
             match address {
-                0x0000..=0x00ff => Some(boot_rom_data[address as usize]),
+                0x0000..=0x00FF if self.boot_rom_enabled => Some(boot_rom_data[address as usize]),
                 _ => self.mbc.try_read8(address),
             }
         } else {
@@ -115,7 +128,12 @@ impl Memory for Cartridge {
     }
 
     fn write8(&mut self, address: u16, value: u8) {
-        self.mbc.write8(address, value);
+        match address {
+            0xff50 => self.boot_rom_enabled = value == 0x00,
+            _ => {
+                self.mbc.write8(address, value);
+            }
+        }
     }
 
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {

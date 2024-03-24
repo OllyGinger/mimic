@@ -9,6 +9,10 @@ pub struct CPU {
     broken_in_debugger: bool,
     debug_single_step: bool,
     pub mmu: MMU,
+    pub setdi: u8,
+    pub setei: u8,
+
+    pub(crate) interrupt_flag: u8,
 }
 
 pub struct OpcodeAndPrefix {
@@ -25,6 +29,10 @@ impl CPU {
             broken_in_debugger: true, // For now, just always start broken in debugger
             debug_single_step: false,
             mmu: mmu,
+            setdi: 0,
+            setei: 0,
+
+            interrupt_flag: 0,
         }
     }
 
@@ -54,6 +62,17 @@ impl CPU {
 
     pub fn wants_single_step(&self) -> bool {
         self.debug_single_step
+    }
+
+    pub fn push_stack(self: &mut CPU, value: u16) {
+        self.mmu.write16(self.registers.sp().wrapping_sub(2), value);
+        self.registers.set_sp(self.registers.sp().wrapping_sub(2));
+    }
+
+    pub fn pop_stack(self: &mut CPU) -> u16 {
+        let ret = self.mmu.read16(self.registers.sp());
+        self.registers.set_sp(self.registers.sp().wrapping_add(2));
+        ret
     }
 
     // TODO: This should probably check if we're about to read

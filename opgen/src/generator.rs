@@ -47,7 +47,7 @@ impl Generator {
             }
         }
 
-        for opcode in 0..255 {
+        for opcode in 0..256 {
             let encoding_params: op::EncodingParams = opcode.into();
             let eval_context = context_map! {
                 "x" => Value::Int(encoding_params.x as i64),

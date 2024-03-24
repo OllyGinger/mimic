@@ -14,6 +14,7 @@ use material_symbols::Symbol::*;
 
 pub struct CodeDebugger {
     disassembly: Vec<DisassemblyLine>,
+    boot_rom_enable: u8,
 
     pub breakpoints: BTreeSet<u16>,
     last_disassembly_scroll_address: u16,
@@ -23,6 +24,7 @@ impl CodeDebugger {
     pub fn new() -> CodeDebugger {
         CodeDebugger {
             disassembly: Vec::new(),
+            boot_rom_enable: 0,
 
             breakpoints: BTreeSet::new(),
             last_disassembly_scroll_address: 0x00,
@@ -69,8 +71,10 @@ impl CodeDebugger {
     }
 
     fn draw_disassembly_window(&mut self, ui: &imgui::Ui, cpu: &CPU) {
-        if self.disassembly.is_empty() {
+        let new_boot_rom_enable = cpu.mmu.read8(0xff50);
+        if self.disassembly.is_empty() || new_boot_rom_enable != self.boot_rom_enable {
             self.disassembly = Disassembler::new().disassemble(&cpu.mmu);
+            self.boot_rom_enable = new_boot_rom_enable;
         }
 
         let flags = TableFlags::BORDERS_V | TableFlags::SCROLL_Y;
@@ -105,15 +109,16 @@ impl CodeDebugger {
 
                 // Highlight if this row is the current PC
                 let is_crrent_instruction_row = cpu.registers.pc()
-                    >= *row_data.address_range.start()
-                    && cpu.registers.pc() < *row_data.address_range.end();
+                    >= *row_data.address_range.start() as u16
+                    && cpu.registers.pc() < *row_data.address_range.end() as u16;
                 if is_crrent_instruction_row {
                     ui.table_set_bg_color(TableBgTarget::ROW_BG0, COLOUR_DISASSEMBLY_ROW_PC);
                     is_pc_row_visible = true;
                 }
 
                 // Highlight if this is a breakpoint
-                if self.breakpoints.contains(row_start_addr) {
+                let row_start_addr16 = *row_start_addr as u16;
+                if self.breakpoints.contains(&row_start_addr16) {
                     ui.table_set_bg_color(
                         TableBgTarget::ROW_BG0,
                         COLOUR_DEBUGGER_CODE_BREAKPOINT_ROW,
@@ -136,10 +141,10 @@ impl CodeDebugger {
                     .allow_double_click(true)
                     .build();
                 if breakpoint_cell_clicked {
-                    if self.breakpoints.contains(row_start_addr) {
-                        self.breakpoints.remove(row_start_addr);
+                    if self.breakpoints.contains(&row_start_addr16) {
+                        self.breakpoints.remove(&row_start_addr16);
                     } else {
-                        self.breakpoints.insert(*row_start_addr);
+                        self.breakpoints.insert(*&row_start_addr16);
                     }
                 }
                 ui.set_cursor_pos(pos);
@@ -152,7 +157,7 @@ impl CodeDebugger {
                     ui.text("");
                 }
                 ui.same_line();
-                if self.breakpoints.contains(row_start_addr) {
+                if self.breakpoints.contains(&row_start_addr16) {
                     ui.text_colored(
                         COLOUR_DEBUGGER_CODE_BREAKPOINT,
                         format!(
@@ -176,8 +181,8 @@ impl CodeDebugger {
             if !is_pc_row_visible && self.last_disassembly_scroll_address != cpu.registers.pc() {
                 let mut idx = 0;
                 for row in &self.disassembly {
-                    if cpu.registers.pc() >= *row.address_range.start()
-                        && cpu.registers.pc() < *row.address_range.end()
+                    if cpu.registers.pc() >= *row.address_range.start() as u16
+                        && cpu.registers.pc() < *row.address_range.end() as u16
                     {
                         ui.set_scroll_y(ui.text_line_height_with_spacing() * idx as f32);
                         self.last_disassembly_scroll_address = cpu.registers.pc();

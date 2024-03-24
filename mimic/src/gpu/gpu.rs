@@ -4,6 +4,7 @@ use super::{
     FRAME_BUFFER_TEXTURE_WIDTH, LCD_SCREEN_WIDTH, TILE_SIZE,
 };
 use crate::{
+    cpu::interrupts,
     int_utils::IntExt,
     memory::memory::{Memory, MemoryRangeInclusive},
     tickable::Tickable,
@@ -12,6 +13,7 @@ use crate::{
 use bitflags::bitflags;
 
 const VRAM_SIZE: usize = 0x4000;
+const VRAM_OAM_SIZE: usize = 0xA0;
 
 bitflags!(
     pub struct LCDControl: u8 {
@@ -78,10 +80,12 @@ impl Mode {
 pub struct GPU {
     mode: Mode,
     cycles: isize,
+    interrupt_request: u8,
 
     // Memory
     vram: [u8; VRAM_SIZE],
     vram_bank: usize,
+    vram_oam: [u8; VRAM_OAM_SIZE],
 
     // GPU Control
     lcd_status: LCDStat, // LCD Status
@@ -96,6 +100,8 @@ pub struct GPU {
     window_pos_y_triggered: bool,
 
     bg_palette: Palette,
+    obj_palette_0: Palette, // OBP0, OBP1 (Non-CGB Mode only): OBJ palette 0, 1 data
+    obj_palette_1: Palette, // OBP0, OBP1 (Non-CGB Mode only): OBJ palette 0, 1 data
 
     // Internals
     mapped_ranges: Vec<MemoryRangeInclusive>,
@@ -108,10 +114,12 @@ impl GPU {
         let mut gpu = GPU {
             mode: Mode::AccessOAM,
             cycles: 0,
+            interrupt_request: 0,
 
             // Memory
             vram: [0; VRAM_SIZE],
             vram_bank: 1,
+            vram_oam: [0; VRAM_OAM_SIZE],
 
             // LCD Control
             lcd_status: LCDStat::empty(),
@@ -126,10 +134,13 @@ impl GPU {
 
             // GPU Control
             bg_palette: Palette::new(),
+            obj_palette_0: Palette::new(),
+            obj_palette_1: Palette::new(),
 
             // Internals
             mapped_ranges: vec![
                 0x8000..=0x9FFF, // VRam
+                0xFE00..=0xFE9F, // OAM
                 0xFF40..=0xFF4B, // GPU/LCD Control
             ],
             back_buffer: [(0u8, 0u8, 0u8);
@@ -245,7 +256,7 @@ impl GPU {
             Mode::HBlank => self.lcd_status.contains(LCDStat::HBLANK_INT),
             Mode::VBlank => {
                 self.window_pos_y_triggered = false;
-                //self.interrupt |= 0x01; // Vblank int
+                self.interrupt_request |= interrupts::InterruptFlag::VBLANK.bits(); // Vblank int
                 self.lcd_status.contains(LCDStat::VBLANK_INT)
             }
             Mode::AccessOAM => {
@@ -260,7 +271,7 @@ impl GPU {
             }
             _ => false,
         } {
-            //self.interrupt |= 0x02; // Stat interrrupt
+            self.interrupt_request |= interrupts::InterruptFlag::LCD.bits(); // Stat interrrupt
         }
     }
 
@@ -269,7 +280,7 @@ impl GPU {
         tile_num: u16,
     ) -> [PixelColour; TILE_SIZE * TILE_SIZE] {
         let mut tile_data = [(0, 0, 0); TILE_SIZE * TILE_SIZE];
-        let mut address = (0x8000_u16 + (tile_num as u16 * (TILE_SIZE * 2) as u16)) as u16;
+        let mut address = 0x8000_u16 + (tile_num as u16 * (TILE_SIZE * 2) as u16);
 
         for y in 0..TILE_SIZE {
             let row_data = utils::from_u16(self.read16(address));
@@ -309,6 +320,34 @@ impl GPU {
     pub fn get_back_buffer(&self) -> &BackBufferTexture {
         &self.back_buffer
     }
+
+    fn check_lyc_interrupt(&mut self) {
+        if self.ly != self.lyc {
+            self.lcd_status.remove(LCDStat::LYC_COMPARE);
+        } else {
+            self.lcd_status.insert(LCDStat::LYC_COMPARE);
+            if self.lcd_status.contains(LCDStat::LYC_INT) {
+                self.interrupt_request |= interrupts::InterruptFlag::LCD.bits();
+            }
+        }
+    }
+
+    fn get_lcd_stat(&self) -> u8 {
+        if !self.lcd_control.contains(LCDControl::LCD_ON) {
+            LCDStat::UNUSED.bits
+        } else {
+            self.mode.bits() | self.lcd_status.bits | LCDStat::UNUSED.bits
+        }
+    }
+
+    fn set_lcd_stat(&mut self, value: u8) {
+        let new_stat = LCDStat::from_bits_truncate(value);
+        self.lcd_status = (self.lcd_status & LCDStat::LYC_COMPARE)
+            | (new_stat & LCDStat::HBLANK_INT)
+            | (new_stat & LCDStat::VBLANK_INT)
+            | (new_stat & LCDStat::ACCESS_OAM_INT)
+            | (new_stat & LCDStat::LYC_INT)
+    }
 }
 
 impl Memory for GPU {
@@ -317,23 +356,32 @@ impl Memory for GPU {
             0x8000..=0x9fff => {
                 Some(self.vram[(self.vram_bank * 0x2000) | (address as usize & 0x1FFF)])
             }
+            0xFE00..=0xFE9F => Some(self.vram_oam[address as usize - 0xFE00]),
 
             // LCD Control
             0xff40 => Some(self.lcd_control.bits()),
             0xff42 => Some(self.scy),
             0xff43 => Some(self.scx),
             0xFF44 => Some(self.ly),
+            0xFF45 => Some(self.lyc),
+            0xFF4A => Some(self.window_pos_y),
+            0xFF4B => Some(self.window_pos_x),
 
-            // GPU Control
+            // Palettes
             0xFF47 => Some(self.bg_palette.get_bits()),
+            0xff48 => Some(self.obj_palette_0.get_bits()),
+            0xff49 => Some(self.obj_palette_1.get_bits()),
 
             _ => None,
         }
     }
 
     fn read8(&self, address: u16) -> u8 {
-        self.try_read8(address)
-            .expect(&format!("Unmapped GPU address: {:#06X}", address))
+        if let Some(x) = self.try_read8(address) {
+            x
+        } else {
+            panic!("Unmapped GPU address: {:#06X}", address)
+        }
     }
 
     fn write8(&mut self, address: u16, value: u8) {
@@ -341,15 +389,22 @@ impl Memory for GPU {
             0x8000..=0x9fff => {
                 self.vram[(self.vram_bank * 0x2000) | (address as usize & 0x1FFF)] = value
             }
+            0xFE00..=0xFE9F => self.vram_oam[address as usize - 0xFE00] = value,
 
             // LCD Control
             0xff40 => self.set_lcd_control(value),
+            0xff41 => self.set_lcd_stat(value),
             0xff42 => self.scy = value,
             0xff43 => self.scx = value,
             0xff44 => panic!("Attempted to write to LY register (0xFF44). Read only."),
+            0xff45 => self.lyc = value,
+            0xff4a => self.window_pos_y = value,
+            0xff4b => self.window_pos_x = value,
 
-            // GPU Control
+            // Palettes
             0xFF47 => self.bg_palette.update(value),
+            0xff48 => self.obj_palette_0.update(value),
+            0xff49 => self.obj_palette_1.update(value),
 
             _ => panic!("Unmapped GPU address: {:#06x}", address),
         }
@@ -358,12 +413,24 @@ impl Memory for GPU {
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         &self.mapped_ranges
     }
+
+    fn get_interrupt(&self) -> u8 {
+        self.interrupt_request
+    }
+
+    fn reset_interrupt(&mut self) {
+        self.interrupt_request = 0x00;
+    }
 }
 
 impl Tickable for GPU {
     fn tick(&mut self, _cycles: u8) {
         self.cycles -= 1;
-
+        if self.cycles == 1 && self.mode == Mode::AccessVRam {
+            if self.lcd_status.contains(LCDStat::HBLANK_INT) {
+                self.interrupt_request |= interrupts::InterruptFlag::LCD.bits();
+            }
+        }
         if self.cycles > 0 {
             return;
         }
@@ -381,6 +448,7 @@ impl Tickable for GPU {
                 } else {
                     self.change_mode(Mode::VBlank);
                 }
+                self.check_lyc_interrupt();
             }
             Mode::VBlank => {
                 self.ly += 1;
@@ -391,6 +459,7 @@ impl Tickable for GPU {
                 } else {
                     self.cycles += VBLANK_LINE_CYCLES
                 }
+                self.check_lyc_interrupt();
             }
         }
     }

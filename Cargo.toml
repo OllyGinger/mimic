@@ -9,3 +9,5 @@ version = "0.1.0"
 opgen = { version = "0.1.0", path = "opgen" }
 
 
+[profile.release]
+debug = true

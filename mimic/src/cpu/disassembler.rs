@@ -5,7 +5,7 @@ use crate::memory::mmu::MMU;
 use super::cpu::CPU;
 
 pub struct DisassemblyLine {
-    pub address_range: RangeInclusive<u16>,
+    pub address_range: RangeInclusive<u32>,
     pub bytes: Vec<u8>,
     pub instruction: String,
     pub comment: Option<String>,
@@ -44,7 +44,7 @@ impl Disassembler {
             // First check if the first byte isn't mapped. If not, we can't process any further
             if let None = bytes[0] {
                 line = DisassemblyLine {
-                    address_range: address..=address,
+                    address_range: address as u32..=address as u32,
                     bytes: raw_bytes[..1].to_vec(),
                     instruction: "??".to_string(),
                     comment: None,
@@ -59,7 +59,7 @@ impl Disassembler {
             // Then handle the main instruction
             else if let Some(instruction_len) = CPU::instruction_length(&op) {
                 line = DisassemblyLine {
-                    address_range: address..=address + instruction_len as u16,
+                    address_range: address as u32..=address as u32 + instruction_len as u32,
                     bytes: raw_bytes[..instruction_len as usize].to_vec(),
                     instruction: CPU::disassemble(&op)
                         .expect("Unknown opcode") // This should never happen as it's the same check as `CPU::instruction_length` above
@@ -81,7 +81,7 @@ impl Disassembler {
             else {
                 // Unknown opcode
                 line = DisassemblyLine {
-                    address_range: address..=address,
+                    address_range: address as u32..=address as u32,
                     bytes: raw_bytes[..1 as usize].to_vec(),
                     instruction: "<unknown opcode>".to_string(),
                     comment: None,

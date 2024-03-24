@@ -51,7 +51,12 @@ fn handle_action_replacements(opcode: u32, action: &String) -> String {
         .replace("$RR2P", &get_register_pair_af_name(encoding_params.p))
         .replace("$ALU", &get_alu_function(encoding_params.y))
         .replace("$ROTY", &get_rot_function_name(encoding_params.y))
-        .replace("$NY", &encoding_params.y.to_string());
+        .replace("$NY", &encoding_params.y.to_string())
+        .replace(
+            "$P10P8",
+            ((encoding_params.p * 10) + 8).to_string().as_str(),
+        )
+        .replace("$P10", (encoding_params.p * 10).to_string().as_str());
 
     if encoding_params.y >= 4 {
         ret = ret.replace(
@@ -77,7 +82,12 @@ fn handle_mnemonic_replacements(opcode: u32, mnemonic: &String) -> String {
         )
         .replace("$ALU", &get_alu_function_description(encoding_params.y))
         .replace("$ROTY", &get_rot_function_description(encoding_params.y))
-        .replace("$NY", &encoding_params.y.to_string());
+        .replace("$NY", &encoding_params.y.to_string())
+        .replace(
+            "$P10P8",
+            ((encoding_params.p * 10) + 8).to_string().as_str(),
+        )
+        .replace("$P10", (encoding_params.p * 10).to_string().as_str());
 
     if encoding_params.y >= 4 {
         ret = ret.replace(

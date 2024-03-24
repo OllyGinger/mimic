@@ -1402,11 +1402,37 @@ $ALU, n8:
     self.registers.inc_pc(1);
     self.alu_$ALU(imm);
 
+# - - - - 
+DI:
+  encoding: (x == 3 && y == 6 && z == 3)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.setdi = 2;
 
+# - - - - 
+EI:
+  encoding: (x == 3 && y == 7 && z == 3)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.setei = 2;
+    
+# - - - - 
+RST $P10:
+  encoding: (x == 3 && z == 7 && q == 0)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_pc($P10);
 
-
-
-
+# - - - - 
+RST $P10P8:
+  encoding: (x == 3 && z == 7 && q == 1)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_pc($P10P8);
 
 
 
