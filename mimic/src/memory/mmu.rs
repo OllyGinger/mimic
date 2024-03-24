@@ -12,7 +12,7 @@ pub struct MMU {
     /// may map to the same memory interface
     interfaces: BTreeMap<(usize, usize), Rc<RefCell<dyn TickableMemory>>>,
 
-    interrupt_flag: u8,
+    pub(crate) interrupt_flag: u8,
     interrupt_enable: u8,
     hram: [u8; HRAM_SIZE],
     wram: [u8; WRAM_SIZE],

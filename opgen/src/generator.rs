@@ -117,6 +117,10 @@ impl Generator {
                 let next_opcode = self.read_next_opcode();
                 let mcycles;
                 self.pre_tick();
+                match self.handle_interrupts() {{
+                    0 => {{}}
+                    n => return n,
+                }}
                 match next_opcode.prefix {{"
         )
         .unwrap();

@@ -11,8 +11,6 @@ pub struct CPU {
     pub mmu: MMU,
     pub setdi: u8,
     pub setei: u8,
-
-    pub(crate) interrupt_flag: u8,
 }
 
 pub struct OpcodeAndPrefix {
@@ -31,8 +29,6 @@ impl CPU {
             mmu: mmu,
             setdi: 0,
             setei: 0,
-
-            interrupt_flag: 0,
         }
     }
 

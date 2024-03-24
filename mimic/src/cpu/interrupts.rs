@@ -31,10 +31,10 @@ impl CPU {
         };
     }
 
-    fn handle_interrupts(&mut self) -> u8 {
+    pub fn handle_interrupts(&mut self) -> u32 {
         self.update_ime();
         let triggered_int =
-            self.interrupt_flag & self.mmu.read8(0xffff /* interrupt enable */);
+            self.mmu.interrupt_flag & self.mmu.read8(0xffff /* interrupt enable */);
         if triggered_int == 0 {
             return 0;
         }
@@ -49,7 +49,7 @@ impl CPU {
             panic!("Invalid interrupt: {}", 0x0040 | ((int as u16) << 3));
         }
 
-        self.interrupt_flag = self.interrupt_flag & !(1 << int);
+        self.mmu.interrupt_flag = self.mmu.interrupt_flag & !(1 << int);
         self.push_stack(self.registers.pc());
         self.registers.set_pc(0x0040 | ((int as u16) << 3));
 
