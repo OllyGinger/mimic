@@ -9,8 +9,8 @@ pub enum PaletteColour {
 }
 
 impl PaletteColour {
-    #[inline]
-    pub fn from_u8(value: u8) -> PaletteColour {
+    #[inline(always)]
+    pub const fn from_u8(value: u8) -> PaletteColour {
         match value {
             1 => PaletteColour::Light,
             2 => PaletteColour::Dark,
@@ -39,12 +39,13 @@ impl Palette {
         }
     }
 
+    #[inline(always)]
     pub fn get_bits(&self) -> u8 {
         self.bits
     }
 
     #[inline]
-    pub fn get_pixel_color(&self, color: PaletteColour) -> PixelColour {
+    pub const fn get_pixel_color(&self, color: PaletteColour) -> PixelColour {
         // Lighter Colors
         //const COLOURS: [PixelColour; 4] = [
         //    (0xe0, 0xf8, 0xd0), // White

@@ -1275,6 +1275,16 @@ LD A, (C):
       - [cpu.registers.flag_c(), 1]
 
 # - - - -
+LD A, (n16):
+  encoding: (x == 3 && y == 7 && z == 2)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read16(self.registers.pc());
+    self.registers.inc_pc(2);
+    self.registers.set_a(self.mmu.read8(imm));
+  
+# - - - -
 LDH (n8), A:
   encoding: (x == 3 && y == 4 && z == 0)
   mcycle_duration: 3
@@ -1387,6 +1397,17 @@ RET:
     let val = self.mmu.read16(self.registers.sp());
     self.registers.set_sp(self.registers.sp().wrapping_add(2));
     self.registers.set_pc(val);
+
+# - - - - 
+RETI:
+  encoding: (x == 3 && y == 3 && z == 1)
+  mcycle_duration: 4
+  action:
+    self.registers.inc_pc(1);
+    let val = self.mmu.read16(self.registers.sp());
+    self.registers.set_sp(self.registers.sp().wrapping_add(2));
+    self.registers.set_pc(val);
+    self.registers.set_ime(true);
 
 # ADD Flags: Z 0 H C
 # SUB Flags: Z 1 H C

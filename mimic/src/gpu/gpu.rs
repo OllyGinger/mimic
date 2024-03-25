@@ -86,6 +86,7 @@ pub struct GPU {
     vram: [u8; VRAM_SIZE],
     vram_bank: usize,
     vram_oam: [u8; VRAM_OAM_SIZE],
+    dma_control: u8,
 
     // GPU Control
     lcd_status: LCDStat, // LCD Status
@@ -115,6 +116,7 @@ impl GPU {
             mode: Mode::AccessOAM,
             cycles: 0,
             interrupt_request: 0,
+            dma_control: 0,
 
             // Memory
             vram: [0; VRAM_SIZE],
@@ -364,13 +366,15 @@ impl Memory for GPU {
             0xff43 => Some(self.scx),
             0xFF44 => Some(self.ly),
             0xFF45 => Some(self.lyc),
-            0xFF4A => Some(self.window_pos_y),
-            0xFF4B => Some(self.window_pos_x),
-
+            0xff46 => Some(self.dma_control),
             // Palettes
             0xFF47 => Some(self.bg_palette.get_bits()),
             0xff48 => Some(self.obj_palette_0.get_bits()),
             0xff49 => Some(self.obj_palette_1.get_bits()),
+
+            // Window
+            0xFF4A => Some(self.window_pos_y),
+            0xFF4B => Some(self.window_pos_x),
 
             _ => None,
         }
@@ -398,13 +402,16 @@ impl Memory for GPU {
             0xff43 => self.scx = value,
             0xff44 => panic!("Attempted to write to LY register (0xFF44). Read only."),
             0xff45 => self.lyc = value,
-            0xff4a => self.window_pos_y = value,
-            0xff4b => self.window_pos_x = value,
+            0xff46 => self.dma_control = value,
 
             // Palettes
             0xFF47 => self.bg_palette.update(value),
             0xff48 => self.obj_palette_0.update(value),
             0xff49 => self.obj_palette_1.update(value),
+
+            // Window
+            0xff4a => self.window_pos_y = value,
+            0xff4b => self.window_pos_x = value,
 
             _ => panic!("Unmapped GPU address: {:#06x}", address),
         }
