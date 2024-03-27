@@ -197,14 +197,14 @@ impl CPU {
         val
     }
 
-    pub fn alu_rr(&mut self, mut val: u8) -> u8 {
+    pub fn alu_rr(&mut self, val: u8) -> u8 {
         let carry = val & 0x01;
-        val >>= 1 | ((self.registers.flag_c() as u8) << 7);
-        self.registers.set_flag_z(val == 0x00);
+        let newval = (val >> 1) | ((self.registers.flag_c() as u8) << 7);
+        self.registers.set_flag_z(newval == 0x00);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);
         self.registers.set_flag_c(carry != 0);
-        val
+        newval
     }
 
     pub fn alu_sla(&mut self, mut val: u8) -> u8 {

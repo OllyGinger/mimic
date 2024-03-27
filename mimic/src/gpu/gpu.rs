@@ -103,6 +103,9 @@ pub struct GPU {
     bg_palette: Palette,
     obj_palette_0: Palette, // OBP0, OBP1 (Non-CGB Mode only): OBJ palette 0, 1 data
     obj_palette_1: Palette, // OBP0, OBP1 (Non-CGB Mode only): OBJ palette 0, 1 data
+    cbg_palette_inc: bool, // BCPS/BGPI (CGB Mode only): Background color palette specification / Background palette index (Auto Increment)
+    cbg_palette_ind: u8, // BCPS/BGPI (CGB Mode only): Background color palette specification / Background palette index
+    cbg_palette: [[[u8; 3]; 4]; 8], // BCPD/BGPD (CGB Mode only): Background color palette data / Background palette data
 
     // Internals
     mapped_ranges: Vec<MemoryRangeInclusive>,
@@ -138,12 +141,16 @@ impl GPU {
             bg_palette: Palette::new(),
             obj_palette_0: Palette::new(),
             obj_palette_1: Palette::new(),
+            cbg_palette_inc: false,
+            cbg_palette_ind: 0,
+            cbg_palette: [[[0u8; 3]; 4]; 8],
 
             // Internals
             mapped_ranges: vec![
                 0x8000..=0x9FFF, // VRam
                 0xFE00..=0xFE9F, // OAM
-                0xFF40..=0xFF4B, // GPU/LCD Control
+                0xFF40..=0xFF4F, // GPU/LCD Control
+                0xFF68..=0xFF69, // GCP Palette
             ],
             back_buffer: [(0u8, 0u8, 0u8);
                 FRAME_BUFFER_TEXTURE_HEIGHT * FRAME_BUFFER_TEXTURE_WIDTH],
@@ -375,7 +382,24 @@ impl Memory for GPU {
             // Window
             0xFF4A => Some(self.window_pos_y),
             0xFF4B => Some(self.window_pos_x),
+            0xFF4F => Some(self.vram_bank as u8),
 
+            0xFF68 => Some(self.cbg_palette_ind | (if self.cbg_palette_inc { 0x80 } else { 0 })),
+            0xFF69 => {
+                let palnum = (self.cbg_palette_ind >> 3) as usize;
+                let colnum = ((self.cbg_palette_ind >> 1) & 0x3) as usize;
+                if self.cbg_palette_ind & 0x01 == 0x00 {
+                    Some(
+                        self.cbg_palette[palnum][colnum][0]
+                            | ((self.cbg_palette[palnum][colnum][1] & 0x07) << 5),
+                    )
+                } else {
+                    Some(
+                        ((self.cbg_palette[palnum][colnum][1] & 0x18) >> 3)
+                            | (self.cbg_palette[palnum][colnum][2] << 2),
+                    )
+                }
+            }
             _ => None,
         }
     }
@@ -412,6 +436,28 @@ impl Memory for GPU {
             // Window
             0xff4a => self.window_pos_y = value,
             0xff4b => self.window_pos_x = value,
+            0xFF4F => self.vram_bank = (value & 0x01) as usize,
+
+            0xFF68 => {
+                self.cbg_palette_ind = value & 0x3F;
+                self.cbg_palette_inc = value & 0x80 == 0x80;
+            }
+            0xFF69 => {
+                let palnum = (self.cbg_palette_ind >> 3) as usize;
+                let colnum = ((self.cbg_palette_ind >> 1) & 0x03) as usize;
+                if self.cbg_palette_ind & 0x01 == 0x00 {
+                    self.cbg_palette[palnum][colnum][0] = value & 0x1F;
+                    self.cbg_palette[palnum][colnum][1] =
+                        (self.cbg_palette[palnum][colnum][1] & 0x18) | (value >> 5);
+                } else {
+                    self.cbg_palette[palnum][colnum][1] =
+                        (self.cbg_palette[palnum][colnum][1] & 0x07) | ((value & 0x3) << 3);
+                    self.cbg_palette[palnum][colnum][2] = (value >> 2) & 0x1F;
+                }
+                if self.cbg_palette_inc {
+                    self.cbg_palette_ind = (self.cbg_palette_ind + 1) & 0x3F;
+                };
+            }
 
             _ => panic!("Unmapped GPU address: {:#06x}", address),
         }

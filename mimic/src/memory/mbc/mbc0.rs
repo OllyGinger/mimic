@@ -23,8 +23,11 @@ impl Memory for MBC0 {
         Some(self.rom[address as usize])
     }
     fn read8(&self, address: u16) -> u8 {
-        self.try_read8(address)
-            .expect(&format!("Unmapped address: {:#06X}", address))
+        if let Some(x) = self.try_read8(address) {
+            x
+        } else {
+            panic!("Unmapped address: {:#06X}", address)
+        }
     }
 
     fn write8(&mut self, address: u16, value: u8) {

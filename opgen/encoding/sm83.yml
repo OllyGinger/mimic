@@ -151,6 +151,12 @@ NOP:
         - [cpu.registers.flag_c(), 1]
         - [cpu.registers.pc(), 0x01] 
 
+STOP: 
+  encoding: (x == 0 && y == 2 && z == 0)
+  action: 
+    self.registers.inc_pc(1);
+    self.registers.set_ime(false);
+
 # 8 bit inc/dec
 # Flags: Z 0 H -
 INC $RY:
@@ -1408,6 +1414,14 @@ RETI:
     self.registers.set_sp(self.registers.sp().wrapping_add(2));
     self.registers.set_pc(val);
     self.registers.set_ime(true);
+
+# - - - - 
+JP HL:
+  encoding: (x == 3 && y == 5 && z == 1)
+  mcycle_duration: 1
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_pc(self.registers.hl());
 
 # ADD Flags: Z 0 H C
 # SUB Flags: Z 1 H C

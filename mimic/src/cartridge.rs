@@ -82,7 +82,7 @@ fn parse_rom_size(val: u8) -> usize {
     (32 * 1024) * (1 << val)
 }
 
-fn parse_ram_size(val: u8) -> usize {
+pub fn parse_ram_size(val: u8) -> usize {
     match val {
         0x0 => 0,
         0x2 => 8 * 1024,

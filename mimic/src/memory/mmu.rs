@@ -81,6 +81,7 @@ impl MMU {
             }
             0xFEA0..=0xFEFF => Some(0xff), // Prohibited space, but some games use it...
             0xff0f => Some(self.interrupt_flag),
+            0xFF4D | 0xFF51..=0xFF55 => Some(0),
             0xff80..=0xfffe => Some(self.hram[address as usize & 0x007f]),
             0xFF71..=0xFF7F => Some(0xff), // IO, Unknown
             0xffff => Some(self.interrupt_enable),
@@ -103,6 +104,7 @@ impl MMU {
             }
             0xFEA0..=0xFEFF => {} // Prohibited space, but some games use it...
             0xff0f => self.interrupt_flag = value,
+            0xFF4D | 0xFF51..=0xFF55 => {}
             0xff80..=0xfffe => self.hram[address as usize & 0x007f] = value,
             0xFF71..=0xFF7F => {} // IO, Unknown
             0xffff => self.interrupt_enable = value,
