@@ -100,14 +100,12 @@ impl CPU {
     }
 
     pub fn alu_add_hl(&mut self, val: u16) {
-        let a = val;
-        let b = self.registers.hl();
-        let (result, carry) = b.overflowing_add(a);
-        let half_carry = u16::test_add_carry_bit(11, a, b);
-        self.registers.set_flag_z(result == 0);
+        let hl = self.registers.hl();
+        let result = hl.wrapping_add(val);
+        let half_carry = u16::test_add_carry_bit(11, hl, val);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(half_carry);
-        self.registers.set_flag_c(carry);
+        self.registers.set_flag_c(hl > 0xffff - val);
         self.registers.set_hl(result);
     }
 
