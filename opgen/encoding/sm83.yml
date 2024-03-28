@@ -1431,6 +1431,7 @@ JP HL:
 $ALU, n8:
   encoding: (x == 3) && (z == 6)
   length: 2
+  mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc());
@@ -1469,8 +1470,28 @@ RST $P10P8:
     self.registers.inc_pc(1);
     self.registers.set_pc($P10P8);
 
+# 0 0 H C 
+LD HL, SP+e:
+  encoding: (x == 3 && y == 7 && z == 0)
+  mcycle_duration: 3
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc()) as i8 as u16;
+    self.registers.inc_pc(1);
+    let sp = self.registers.sp();
+    let v = sp.wrapping_add(imm);
+    self.registers.set_flag_z(false);
+    self.registers.set_flag_n(false);
+    self.registers.set_flag_h(u16::test_add_carry_bit(3, sp, imm));
+    self.registers.set_flag_c(u16::test_add_carry_bit(7, sp, imm));
 
-
+# - - - - 
+LD SP, HL:
+  encoding: (x == 3 && y == 7 && z == 1)
+  mcycle_duration: 2
+  action:
+    self.registers.inc_pc(1);
+    self.registers.set_pc(self.registers.hl());
 
 
 

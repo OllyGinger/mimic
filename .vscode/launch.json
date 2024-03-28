@@ -34,11 +34,11 @@
                 //"--rom-path=roms/Tetris.gb",
                 //"--rom-path=roms/MarioLand.gb",
                 //"--rom-path=roms/LinksAwakening.gb",
-                //"--rom-path=roms/verification/01-special.gb",
+                //"--rom-path=roms/verification/01-special.gb", // PASS
                 //"--rom-path=roms/verification/02-interrupts.gb", // FAIL
-                "--rom-path=roms/verification/03-op sp,hl.gb",
-                //"--rom-path=roms/verification/04-op r,imm.gb",
-                //"--rom-path=roms/verification/05-op rp.gb",
+                //"--rom-path=roms/verification/03-op sp,hl.gb",
+                //"--rom-path=roms/verification/04-op r,imm.gb", // PASS
+                "--rom-path=roms/verification/05-op rp.gb",
                 //"--rom-path=roms/verification/06-ld r,r.gb",
                 //"--rom-path=roms/verification/07-jr,jp,call,ret,rst.gb",
                 //"--rom-path=roms/verification/08-misc instrs.gb",

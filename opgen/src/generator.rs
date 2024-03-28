@@ -92,6 +92,7 @@ impl Generator {
         writeln!(
             file,
             "use super::cpu::CPU;
+            use crate::int_utils::IntExt;
             use super::cpu::OpcodeAndPrefix;
             impl CPU {{"
         )

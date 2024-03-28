@@ -22,7 +22,9 @@ impl CPU {
 
     pub fn alu_add(&mut self, val: u8) {
         let (result, carry) = self.registers.a().overflowing_add(val);
-        let half_carry = (val & 0x0f).checked_add(val | 0xf0).is_none();
+        let half_carry = (self.registers.a() & 0x0f)
+            .checked_add(val | 0xf0)
+            .is_none();
         self.registers.set_flag_z(result == 0u8);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(half_carry);
@@ -31,7 +33,15 @@ impl CPU {
     }
 
     pub fn alu_adc(&mut self, val: u8) {
-        self.alu_add(val + self.registers.flag_c() as u8);
+        let cy = self.registers.flag_c() as u8;
+        let result = self.registers.a().wrapping_add(val).wrapping_add(cy);
+        self.registers.set_flag_z(result == 0);
+        self.registers.set_flag_n(false);
+        self.registers
+            .set_flag_h((self.registers.a() & 0xf) + (val & 0xf) + cy > 0xf);
+        self.registers
+            .set_flag_c(self.registers.a() as u16 + val as u16 + cy as u16 > 0xff);
+        self.registers.set_a(result);
     }
 
     fn alu_subcp(&mut self, val: u8, carry: bool, update_a: bool) {
@@ -63,7 +73,7 @@ impl CPU {
 
     pub fn alu_and(&mut self, val: u8) {
         self.registers.set_a(self.registers.a() & val);
-        self.registers.set_flag_z(val == 0);
+        self.registers.set_flag_z(self.registers.a() == 0);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(true);
         self.registers.set_flag_c(false);
@@ -71,7 +81,7 @@ impl CPU {
 
     pub fn alu_xor(&mut self, val: u8) {
         self.registers.set_a(self.registers.a() ^ val);
-        self.registers.set_flag_z(val == 0);
+        self.registers.set_flag_z(self.registers.a() == 0);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);
         self.registers.set_flag_c(false);
@@ -79,7 +89,7 @@ impl CPU {
 
     pub fn alu_or(&mut self, val: u8) {
         self.registers.set_a(self.registers.a() | val);
-        self.registers.set_flag_z(val == 0);
+        self.registers.set_flag_z(self.registers.a() == 0);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);
         self.registers.set_flag_c(false);
