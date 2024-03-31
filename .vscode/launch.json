@@ -35,21 +35,21 @@
                 //"--rom-path=roms/MarioLand.gb",
                 //"--rom-path=roms/LinksAwakening.gb",
                 //"--rom-path=roms/verification/01-special.gb", // PASS
-                //"--rom-path=roms/verification/02-interrupts.gb", // FAIL
+                "--rom-path=roms/verification/02-interrupts.gb", // FAIL
                 //"--rom-path=roms/verification/03-op sp,hl.gb",
                 //"--rom-path=roms/verification/04-op r,imm.gb", // PASS
                 //"--rom-path=roms/verification/05-op rp.gb", // PASS
-                "--rom-path=roms/verification/06-ld r,r.gb",
-                //"--rom-path=roms/verification/07-jr,jp,call,ret,rst.gb",
-                //"--rom-path=roms/verification/08-misc instrs.gb",
-                //"--rom-path=roms/verification/09-op r,r.gb",
-                //"--rom-path=roms/verification/10-bit ops.gb",
-                //"--rom-path=roms/verification/11-op a,(hl).gb",
+                //"--rom-path=roms/verification/06-ld r,r.gb", // PASS
+                //"--rom-path=roms/verification/07-jr,jp,call,ret,rst.gb", // CRASH
+                //"--rom-path=roms/verification/08-misc instrs.gb", // CRASH
+                //"--rom-path=roms/verification/09-op r,r.gb", // PASS
+                //"--rom-path=roms/verification/10-bit ops.gb", // PASS
+                //"--rom-path=roms/verification/11-op a,(hl).gb", // PASS
                 //"--rom-path=roms/PokemonRed.gb",
                 //"--rom-path=roms/dmg-acid2.gb",
                 //"--rom-path=roms/lycscx.gb",
                 //"--rom-path=roms/lycscy.gb",
-                "--boot-rom-path=roms/dmg_boot.bin"
+                //"--boot-rom-path=roms/dmg_boot.bin"
             ],
             "cwd": "${workspaceFolder}"
         },

@@ -120,7 +120,10 @@ impl Generator {
                 self.pre_tick();
                 match self.handle_interrupts() {{
                     0 => {{}}
-                    n => return n,
+                    n => {{
+                        self.post_tick(n);
+                        return n;
+                    }}
                 }}
                 match next_opcode.prefix {{"
         )

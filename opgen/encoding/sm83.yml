@@ -163,9 +163,8 @@ INC $RY:
   encoding: (x == 0 && y != 6 && z == 4)
   action:
     self.registers.inc_pc(1);
-    let (val, flags) = self.inc8(self.registers.$RY());
-    self.registers.set_$RY(val); 
-    self.registers.set_flags(flags);
+    let val = self.alu_inc(self.registers.$RY());
+    self.registers.set_$RY(val);
   tests:
     - set:
         - cpu.registers.set_$RY(0xFE)
@@ -201,8 +200,7 @@ INC (HL):
   mcycle_duration: 3
   action:
     self.registers.inc_pc(1);
-    let (val, flags) = self.inc8(self.mmu.read8(self.registers.hl()));
-    self.registers.set_flags(flags);
+    let val = self.alu_inc(self.mmu.read8(self.registers.hl()));
     self.mmu.write8(self.registers.hl(), val); 
   tests:
     - set:
@@ -233,9 +231,8 @@ DEC $RY:
   encoding: (x == 0 && y != 6 && z == 5)
   action:
     self.registers.inc_pc(1);
-    let (val, flags) = self.dec8(self.registers.$RY());
-    self.registers.set_$RY(val); 
-    self.registers.set_flags(flags);
+    let val = self.alu_dec(self.registers.$RY());
+    self.registers.set_$RY(val);
   tests:
     - set:
         - cpu.registers.set_$RY(0xFF)
@@ -270,8 +267,7 @@ DEC (HL):
   mcycle_duration: 3
   action:
     self.registers.inc_pc(1);
-    let (val, flags) = self.dec8(self.mmu.read8(self.registers.hl()));
-    self.registers.set_flags(flags);
+    let val= self.alu_dec(self.mmu.read8(self.registers.hl()));
     self.mmu.write8(self.registers.hl(), val); 
   tests:
     - set:
@@ -1474,6 +1470,7 @@ RST $P10P8:
 LD HL, SP+e:
   encoding: (x == 3 && y == 7 && z == 0)
   mcycle_duration: 3
+  length: 2
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read8(self.registers.pc()) as i8 as u16;
@@ -1484,6 +1481,7 @@ LD HL, SP+e:
     self.registers.set_flag_n(false);
     self.registers.set_flag_h(u16::test_add_carry_bit(3, sp, imm));
     self.registers.set_flag_c(u16::test_add_carry_bit(7, sp, imm));
+    self.registers.set_hl(v);
 
 # - - - - 
 LD SP, HL:

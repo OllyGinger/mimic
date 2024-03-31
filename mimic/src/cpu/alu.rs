@@ -1,23 +1,21 @@
-use super::{cpu::CPU, registers::Flags};
+use super::cpu::CPU;
 use crate::int_utils::IntExt;
 
 impl CPU {
-    pub fn inc8(&self, val: u8) -> (u8, Flags) {
-        let mut flags = Flags::empty();
+    pub fn alu_inc(&mut self, val: u8) -> u8 {
         let result = val.wrapping_add(1);
-        flags.set(Flags::ZERO, result == 0);
-        flags.set(Flags::N_SUBTRACT, false);
-        flags.set(Flags::HALF_CARRY, (val & 0x0f) + 1 > 0x0f);
-        (result, flags)
+        self.registers.set_flag_z(result == 0);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(val & 0xf == 0xf);
+        result
     }
 
-    pub fn dec8(&self, val: u8) -> (u8, Flags) {
-        let mut flags = Flags::empty();
+    pub fn alu_dec(&mut self, val: u8) -> u8 {
         let result = val.wrapping_sub(1);
-        flags.set(Flags::ZERO, result == 0);
-        flags.set(Flags::N_SUBTRACT, true);
-        flags.set(Flags::HALF_CARRY, (val & 0x0f) == 0);
-        (result, flags)
+        self.registers.set_flag_z(result == 0);
+        self.registers.set_flag_n(true);
+        self.registers.set_flag_h(val & 0xf == 0);
+        result
     }
 
     pub fn alu_add(&mut self, val: u8) {
@@ -195,14 +193,15 @@ impl CPU {
         val
     }
 
-    pub fn alu_rl(&mut self, mut val: u8) -> u8 {
+    pub fn alu_rl(&mut self, val: u8) -> u8 {
+        let carry_in = self.registers.flag_c() as u8;
         let carry = val & 0x80;
-        val <<= 1 | self.registers.flag_c() as u8;
-        self.registers.set_flag_z(val == 0x00);
+        let result = (val << 1) | carry_in;
+        self.registers.set_flag_z(result == 0x00);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);
         self.registers.set_flag_c(carry != 0);
-        val
+        result
     }
 
     pub fn alu_rr(&mut self, val: u8) -> u8 {
@@ -216,12 +215,12 @@ impl CPU {
     }
 
     pub fn alu_sla(&mut self, mut val: u8) -> u8 {
-        let carry = (val & 0x80) == 0x80;
-        val >>= 1;
+        let carry = val & 0x80;
+        val <<= 1;
         self.registers.set_flag_z(val == 0x00);
         self.registers.set_flag_n(false);
         self.registers.set_flag_h(false);
-        self.registers.set_flag_c(carry);
+        self.registers.set_flag_c(carry != 0);
         val
     }
 

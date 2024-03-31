@@ -234,6 +234,14 @@ impl CodeDebugger {
         let stop_button_style = ui.push_style_color(StyleColor::Text, COLOUR_DEBUGGER_STOP);
         ui.button(format!("{}", Stop.codepoint()));
         stop_button_style.pop();
+
+        // Re-disassemble
+        let redisassemble_button_style =
+            ui.push_style_color(StyleColor::Text, COLOUR_DEBUGGER_STOP);
+        if ui.button("Re-Disassemble") {
+            self.disassembly.clear();
+        }
+        redisassemble_button_style.pop();
     }
 
     fn draw_registers(&mut self, ui: &imgui::Ui, cpu: &CPU) {

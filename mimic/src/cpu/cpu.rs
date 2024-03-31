@@ -21,7 +21,8 @@ pub struct OpcodeAndPrefix {
 
 impl CPU {
     pub fn new(mmu: MMU) -> CPU {
-        CPU {
+        let has_boot_rom = mmu.read8(0xff50) == 0x00;
+        let mut cpu = CPU {
             registers: Registers::new(),
             halt: false,
             broken_in_debugger: true, // For now, just always start broken in debugger
@@ -29,7 +30,11 @@ impl CPU {
             mmu: mmu,
             setdi: 0,
             setei: 0,
+        };
+        if !has_boot_rom {
+            cpu.registers.set_pc(0x0100);
         }
+        cpu
     }
 
     pub fn halt(&mut self) {
