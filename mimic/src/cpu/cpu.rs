@@ -1,7 +1,11 @@
+use std::{fs, io};
+
 use crate::{memory::mmu::MMU, tickable::Tickable};
 
 use super::registers::{Flags, Registers};
 use crate::int_utils::IntExt;
+use std::io::Write;
+use std::ops::Not;
 
 pub struct CPU {
     pub registers: Registers,
@@ -11,6 +15,10 @@ pub struct CPU {
     pub mmu: MMU,
     pub setdi: u8,
     pub setei: u8,
+
+    log_enabled: bool,
+    log_buf: io::BufWriter<fs::File>,
+    log_counter: u32,
 }
 
 pub struct OpcodeAndPrefix {
@@ -30,9 +38,35 @@ impl CPU {
             mmu: mmu,
             setdi: 0,
             setei: 0,
+
+            log_enabled: true, // If Gameboy Doctor logging is enabled
+            log_buf: io::BufWriter::new(
+                fs::File::options()
+                    .append(false)
+                    .create(true)
+                    .write(true)
+                    .open(r"F:\repos\mimic\target\mimic_gameboy_doctor.txt")
+                    .unwrap(),
+            ),
+            log_counter: 0,
         };
         if !has_boot_rom {
             cpu.registers.set_pc(0x0100);
+
+            // Initialise for gameboy doctor
+            cpu.registers.set_a(0x01);
+            let mut f: crate::cpu::registers::Flags = crate::cpu::registers::Flags::empty();
+            f.insert(crate::cpu::registers::Flags::ZERO);
+            f.insert(crate::cpu::registers::Flags::CARRY);
+            f.insert(crate::cpu::registers::Flags::HALF_CARRY);
+            cpu.registers.set_flags(f);
+            cpu.registers.set_b(0x00);
+            cpu.registers.set_c(0x13);
+            cpu.registers.set_d(0x00);
+            cpu.registers.set_e(0xd8);
+            cpu.registers.set_h(0x01);
+            cpu.registers.set_l(0x4d);
+            cpu.registers.set_sp(0xfffe);
         }
         cpu
     }
@@ -127,6 +161,8 @@ impl CPU {
 
     pub fn pre_tick(&mut self) {
         self.handle_dma_transfer();
+
+        self.log_gameboy_doctor_state();
     }
 
     pub fn post_tick(&mut self, mcycles: u32) {
@@ -150,5 +186,24 @@ impl CPU {
         }
 
         self.mmu.write8(0xFF46, 0x0);
+    }
+
+    fn log_gameboy_doctor_state(&mut self) {
+        //if !self.mmu.read8(0xff50) == 0x00 {
+        self.log_counter += 1;
+        writeln!(
+            &mut self.log_buf,
+            "{} PCMEM:{:02X},{:02X},{:02X},{:02X}",
+            self.registers,
+            self.mmu.read8(self.registers.pc()),
+            self.mmu.read8(self.registers.pc() + 1),
+            self.mmu.read8(self.registers.pc() + 2),
+            self.mmu.read8(self.registers.pc() + 3)
+        )
+        .unwrap();
+        //if self.log_counter % 100 == 0 {
+        self.log_buf.flush().unwrap();
+        //}
+        //}
     }
 }
