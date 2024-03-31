@@ -130,7 +130,17 @@ impl Emulator {
 
         if !self.cpu.is_broken_to_debugger() {
             loop {
-                ticks += self.cpu.tick();
+                if !self.cpu.is_halted() {
+                    ticks += self.cpu.tick();
+                } else {
+                    // Halt behavior from here: https://gbdev.io/pandocs/halt.html?highlight=halt#halt
+                    self.cpu.post_tick(0);
+
+                    // Interrupt pending
+                    if self.cpu.mmu.read8(0xff0f) > 0 {
+                        self.cpu.wake();
+                    }
+                }
 
                 if self
                     .code_debugger

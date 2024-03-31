@@ -41,6 +41,14 @@ impl CPU {
         self.halt = true;
     }
 
+    pub fn wake(&mut self) {
+        self.halt = false;
+    }
+
+    pub fn is_halted(&self) -> bool {
+        self.halt
+    }
+
     pub fn break_to_debugger(&mut self) {
         self.broken_in_debugger = true;
     }

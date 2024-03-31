@@ -25,7 +25,9 @@
 # Flags: - - - -
 HALT: 
   encoding: (x == 1 && y == 6 && z == 6)
-  action: self.halt();
+  action: 
+    self.registers.inc_pc(1);
+    self.halt();
 
 # Flags: - - - -
 LD $RY, $RZ:

@@ -85,6 +85,10 @@ impl Memory for Timer {
     fn mapped_ranges(&self) -> &Vec<MemoryRangeInclusive> {
         &self.mapped_ranges
     }
+
+    fn get_interrupt(&self) -> u8 {
+        self.interrupt
+    }
 }
 
 impl Tickable for Timer {
