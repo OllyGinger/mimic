@@ -154,6 +154,10 @@ impl Emulator {
                 if ticks as u64 > available_ticks {
                     break;
                 }
+
+                if self.cpu.is_broken_to_debugger() {
+                    break;
+                }
             }
         } else {
             if self.cpu.wants_single_step() {

@@ -1282,6 +1282,7 @@ LD A, (C):
 LD A, (n16):
   encoding: (x == 3 && y == 7 && z == 2)
   mcycle_duration: 4
+  length: 3
   action:
     self.registers.inc_pc(1);
     let imm = self.mmu.read16(self.registers.pc());
