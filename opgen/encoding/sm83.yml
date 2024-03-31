@@ -1492,7 +1492,7 @@ LD SP, HL:
   mcycle_duration: 2
   action:
     self.registers.inc_pc(1);
-    self.registers.set_pc(self.registers.hl());
+    self.registers.set_sp(self.registers.hl());
 
 
 
