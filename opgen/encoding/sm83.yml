@@ -1459,6 +1459,8 @@ RST $P10:
   mcycle_duration: 4
   action:
     self.registers.inc_pc(1);
+    self.mmu.write16(self.registers.sp().wrapping_sub(2), self.registers.pc());
+    self.registers.set_sp(self.registers.sp().wrapping_sub(2));
     self.registers.set_pc($P10);
 
 # - - - - 
@@ -1467,6 +1469,8 @@ RST $P10P8:
   mcycle_duration: 4
   action:
     self.registers.inc_pc(1);
+    self.mmu.write16(self.registers.sp().wrapping_sub(2), self.registers.pc());
+    self.registers.set_sp(self.registers.sp().wrapping_sub(2));
     self.registers.set_pc($P10P8);
 
 # 0 0 H C 
