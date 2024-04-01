@@ -107,6 +107,19 @@ impl CPU {
         self.registers.set_hl(result);
     }
 
+    pub fn alu_add_sp(&mut self, val: u8) {
+        let sp = self.registers.sp();
+        let offset = val as i8 as i16 as u16;
+        let result = sp.wrapping_add(offset);
+        let half_carry = u16::test_add_carry_bit(3, sp, offset);
+        self.registers.set_flag_n(false);
+        self.registers.set_flag_h(half_carry);
+        self.registers
+            .set_flag_c(u16::test_add_carry_bit(7, sp, offset));
+        self.registers.set_flag_z(false);
+        self.registers.set_sp(result);
+    }
+
     pub fn alu_rlca(&mut self) {
         let val = self.registers.a();
         let carry = val & 0x80;

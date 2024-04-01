@@ -1473,6 +1473,18 @@ RST $P10P8:
     self.registers.set_sp(self.registers.sp().wrapping_sub(2));
     self.registers.set_pc($P10P8);
 
+# - - - - 
+# Flags: - 0 H C
+ADD SP, n8:
+  encoding: (x == 3 && y == 5 && z == 0)
+  mcycle_duration: 4
+  length: 2
+  action:
+    self.registers.inc_pc(1);
+    let imm = self.mmu.read8(self.registers.pc());
+    self.registers.inc_pc(1);
+    self.alu_add_sp(imm);
+
 # 0 0 H C 
 LD HL, SP+e:
   encoding: (x == 3 && y == 7 && z == 0)
