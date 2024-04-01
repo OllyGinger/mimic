@@ -32,7 +32,7 @@
             "args": [
                 //"--rom-path=roms/cpu_instrs.gb",
                 //"--rom-path=roms/Tetris.gb",
-                //"--rom-path=roms/MarioLand.gb",
+                //"--rom-path=roms/super_mario_land.gb",
                 //"--rom-path=roms/LinksAwakening.gb",
                 //"--rom-path=roms/verification/01-special.gb", // PASS
                 //"--rom-path=roms/verification/02-interrupts.gb", // PASS
@@ -45,7 +45,9 @@
                 //"--rom-path=roms/verification/09-op r,r.gb", // PASS
                 //"--rom-path=roms/verification/10-bit ops.gb", // PASS
                 //"--rom-path=roms/verification/11-op a,(hl).gb", // PASS
-                "--rom-path=roms/verification/cpu_instrs.gb",
+                // "--rom-path=roms/verification/cpu_instrs.gb", // PASS
+                // "--rom-path=roms/verification/instr_timing.gb", // PASS
+                "--rom-path=roms/verification/01-read_timing.gb",
                 //"--rom-path=roms/PokemonRed.gb",
                 //"--rom-path=roms/dmg-acid2.gb",
                 //"--rom-path=roms/lycscx.gb",
