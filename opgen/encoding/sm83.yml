@@ -936,7 +936,7 @@ LD (n16), SP:
 # 0 0 0 C
 JR n8:
   encoding: (x == 0 && y == 3 && z == 0)
-  mcycle_duration: 1
+  mcycle_duration: 3
   length: 2
   action:
     self.registers.inc_pc(1);
@@ -1159,7 +1159,7 @@ CALL $CC, n16:
       self.mmu.write16(self.registers.sp().wrapping_sub(2), self.registers.pc());
       self.registers.set_pc(imm);
       self.registers.set_sp(self.registers.sp().wrapping_sub(2));
-      mcycles = 4;
+      mcycles = 6;
     } else {
       mcycles = 3;
     }

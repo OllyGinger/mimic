@@ -79,12 +79,14 @@ impl MMU {
             0xD000..=0xDFFF | 0xF000..=0xFDFF => {
                 Some(self.wram[(self.wram_bank * 0x1000) | (address as usize & 0x0FFF)])
             }
-            0xFEA0..=0xFEFF => Some(0xff), // Prohibited space, but some games use it...
-            0xff0f => Some(self.interrupt_flag),
+            0xFEA0..=0xFEFF => Some(0xFF), // Prohibited space, but some games use it...
+            0xFF03 => Some(0),             // Unknown
+            0xFF08..=0xFF0E => Some(0xFF), // Unknown
+            0xFF0F => Some(self.interrupt_flag),
             0xFF4D | 0xFF51..=0xFF55 => Some(0),
-            0xff80..=0xfffe => Some(self.hram[address as usize & 0x007f]),
-            0xFF71..=0xFF7F => Some(0xff), // IO, Unknown
-            0xffff => Some(self.interrupt_enable),
+            0xFF80..=0xFFFE => Some(self.hram[address as usize & 0x007f]),
+            0xFF71..=0xFF7F => Some(0xFF), // IO, Unknown
+            0xFFFF => Some(self.interrupt_enable),
             _ => {
                 if let Some(binding) = self.try_get_mapped_interface(address) {
                     let interface = binding.borrow();
@@ -103,11 +105,13 @@ impl MMU {
                 self.wram[(self.wram_bank * 0x1000) | (address as usize & 0x0FFF)] = value
             }
             0xFEA0..=0xFEFF => {} // Prohibited space, but some games use it...
-            0xff0f => self.interrupt_flag = value,
+            0xFF03 => {}          // Unknown
+            0xFF08..=0xFF0E => {} // Unknown
+            0xFF0F => self.interrupt_flag = value,
             0xFF4D | 0xFF51..=0xFF55 => {}
-            0xff80..=0xfffe => self.hram[address as usize & 0x007f] = value,
+            0xFF80..=0xFFFE => self.hram[address as usize & 0x007f] = value,
             0xFF71..=0xFF7F => {} // IO, Unknown
-            0xffff => self.interrupt_enable = value,
+            0xFFFF => self.interrupt_enable = value,
             _ => {
                 let binding = self.get_mapped_interface(address);
                 let mut interface = binding.borrow_mut();
