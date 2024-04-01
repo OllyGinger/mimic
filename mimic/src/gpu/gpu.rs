@@ -370,6 +370,7 @@ impl Memory for GPU {
             // LCD Control
             0xff40 => Some(self.lcd_control.bits()),
             0xff42 => Some(self.scy),
+            0xff41 => Some(self.get_lcd_stat()),
             0xff43 => Some(self.scx),
             0xFF44 => Some(self.ly),
             0xFF45 => Some(self.lyc),
